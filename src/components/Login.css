@@ -1,0 +1,144 @@
+/* Login.css */
+.login-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow: hidden;
+  }
+  
+  .login-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+    padding: 3rem 2.5rem;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18),
+                0 8px 32px rgba(0, 0, 0, 0.12);
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    opacity: 0;
+    transform: scale(0.94) translateY(30px);
+    animation: cardEntrance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  
+  @keyframes cardEntrance {
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  
+  /* ──────────────────────────────────────── */
+  /*          Google Button - Modern style    */
+  /* ──────────────────────────────────────── */
+  .google-btn {
+    --bg: #ffffff;
+    --text: #1f1f1f;
+    --border: #dadce0;
+  
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 54px;
+    margin: 1.8rem 0 1.2rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .google-btn:hover {
+    --bg: #f8f9fa;
+    box-shadow: 0 2px 12px rgba(60, 64, 67, 0.18),
+                0 1px 4px rgba(60, 64, 67, 0.12);
+    transform: translateY(-1px);
+  }
+  
+  .google-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(60, 64, 67, 0.24);
+  }
+  
+  /* Blue Google style variant (used when loading or hovered long) */
+  .google-btn.hover,
+  .google-btn.loading {
+    --bg: #4285f4;
+    --text: white;
+    --border: #4285f4;
+  }
+  
+  .google-btn.loading {
+    cursor: wait;
+  }
+  
+  /* Icon */
+  .google-icon-wrapper {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    transition: transform 0.35s ease;
+  }
+  
+  .google-btn:hover .google-icon-wrapper {
+    transform: scale(1.08);
+  }
+  
+  .google-icon {
+    width: 22px;
+    height: 22px;
+  }
+  
+  /* Loading spinner inside button */
+  .google-btn.loading .google-icon-wrapper {
+    animation: spin 1.2s linear infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Ripple effect on click */
+  .ripple {
+    position: absolute;
+    background: rgba(255,255,255,0.35);
+    border-radius: 50%;
+    transform: scale(0);
+    opacity: 1;
+    pointer-events: none;
+    animation: ripple 0.6s linear;
+  }
+  
+  @keyframes ripple {
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+  
+  /* Text */
+  .btn-text {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+  
+  /* ──────────────────────────────────────── */
+  /*              Header / Branding           */
+  /* ────────────────────────────────────────
