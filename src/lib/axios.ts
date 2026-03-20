@@ -1,17 +1,27 @@
 import axios from "axios";
 
-// Create a configured Axios instance
 export const api = axios.create({
-    baseURL: 'http://localhost:8080/api/v1',
-    // Crucial for sending and receiving our HTTP-only jwt_token cookie
+    baseURL: "http://localhost:8080/api/v1",
     withCredentials: true,
 });
 
-// Optional: Add interceptors for global error handling if needed in the future
+// Attach Bearer token from localStorage to every request
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        // We could handle global 401s here if desired
+        if (error.response?.status === 401) {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("soksabay_user");
+        }
         return Promise.reject(error);
     }
 );

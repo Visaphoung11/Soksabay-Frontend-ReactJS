@@ -47,7 +47,7 @@ export const Dashboard: React.FC = () => {
                                 Your Roles
                             </h4>
                             <div className="flex flex-wrap gap-2">
-                                {user?.roles.map((role, idx) => (
+                                {user?.role?.map((role, idx) => (
                                     <span
                                         key={idx}
                                         className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"

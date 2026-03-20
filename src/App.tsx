@@ -1,18 +1,14 @@
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import Login from "./pages/Login";
-import Dashboard from "./components/Dashboard"; // Use the fixed Dashboard
+import Dashboard from "./components/Dashboard";
+import BecomeDriver from "./pages/BecomeDriver";
 
 const AppContent = () => {
   const { loading } = useAuth();
 
-  if (loading) return null; // Keeps the screen clean while checking cookies
+  if (loading) return null;
 
   return (
     <Router>
@@ -23,6 +19,14 @@ const AppContent = () => {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/become-driver"
+          element={
+            <ProtectedRoute>
+              <BecomeDriver />
             </ProtectedRoute>
           }
         />
