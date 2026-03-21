@@ -7,6 +7,11 @@ const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login", { replace: true });
+  };
+
   const isDriver = user?.role?.some((r) =>
     r.toUpperCase().includes("DRIVER")
   );
@@ -39,7 +44,7 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center gap-3">
             <NotificationBell />
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 text-white/80 hover:text-white text-sm font-medium rounded-xl transition-all"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

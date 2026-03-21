@@ -16,6 +16,13 @@ export interface ApplyDriverResponse {
     timestamp: string;
 }
 
+export interface DriverDecisionResponse {
+    data: DriverApplication;
+    message: string;
+    success: boolean;
+    timestamp: string;
+}
+
 export const uploadImage = async (file: File): Promise<MediaUploadResponse> => {
     const formData = new FormData();
     formData.append("file", file);
@@ -29,5 +36,15 @@ export const applyAsDriver = async (
     payload: ApplyDriverPayload
 ): Promise<ApplyDriverResponse> => {
     const res = await api.post<ApplyDriverResponse>("/driver-applications/apply", payload);
+    return res.data;
+};
+
+export const approveDriverApplication = async (id: number): Promise<DriverDecisionResponse> => {
+    const res = await api.patch<DriverDecisionResponse>(`/driver-applications/${id}/approve`);
+    return res.data;
+};
+
+export const rejectDriverApplication = async (id: number): Promise<DriverDecisionResponse> => {
+    const res = await api.patch<DriverDecisionResponse>(`/driver-applications/${id}/reject`);
     return res.data;
 };

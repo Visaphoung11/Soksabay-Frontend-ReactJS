@@ -99,7 +99,14 @@ const NotificationBell: React.FC = () => {
                             return [incoming, ...prev];
                         });
 
-                        toast.info(`${incoming.title}: ${incoming.message}`);
+                        const normalizedText = `${incoming.title} ${incoming.message}`.toLowerCase();
+                        const isRejected = normalizedText.includes("reject");
+
+                        if (isRejected) {
+                            toast.error(`${incoming.title}: ${incoming.message}`);
+                        } else {
+                            toast.info(`${incoming.title}: ${incoming.message}`);
+                        }
 
                         const hasApproval =
                             incoming.title.includes("Approved") ||

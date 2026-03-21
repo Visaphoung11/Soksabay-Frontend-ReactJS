@@ -153,7 +153,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await api.post("/auth/logout");
+      // Hit backend logout endpoint explicitly and skip Bearer injection
+      // so cookie-based logout can always clear HttpOnly cookie.
+      await api.post("/auth/logout", null, { skipAuth: true } as any);
     } catch {
       // ignore backend logout failures and clear local state anyway
     } finally {
