@@ -28,11 +28,23 @@ export interface LoginResponse {
 }
 
 export const registerUser = async (payload: RegisterPayload): Promise<RegisterResponse> => {
-    const res = await api.post<RegisterResponse>("/auth-service/register", payload);
+    const res = await api.post<RegisterResponse>(
+        "/auth-service/register",
+        payload,
+        {
+            skipAuth: true,
+        } as any
+    );
     return res.data;
 };
 
 export const loginUser = async (payload: LoginPayload): Promise<LoginResponse> => {
-    const res = await api.post<LoginResponse>("/auth-service/authenticate", payload);
+    const res = await api.post<LoginResponse>(
+        "/auth-service/authenticate",
+        payload,
+        {
+            skipAuth: true,
+        } as any
+    );
     return res.data;
 };

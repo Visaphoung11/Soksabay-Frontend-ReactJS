@@ -1,5 +1,9 @@
 import axios from "axios";
 
+type AuthRequestConfig = {
+    skipAuth?: boolean;
+};
+
 export const api = axios.create({
     baseURL: "http://localhost:8080/api/v1",
     withCredentials: true,
@@ -7,10 +11,16 @@ export const api = axios.create({
 
 // Attach Bearer token from localStorage to every request
 api.interceptors.request.use((config) => {
+    const customConfig = config as typeof config & AuthRequestConfig;
+    const shouldSkipAuth = customConfig.skipAuth === true;
+
     const token = localStorage.getItem("accessToken");
-    if (token) {
+    if (token && !shouldSkipAuth) {
         config.headers.Authorization = `Bearer ${token}`;
+    } else if (config.headers?.Authorization) {
+        delete config.headers.Authorization;
     }
+
     return config;
 });
 

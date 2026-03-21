@@ -51,15 +51,23 @@ const NotificationBell: React.FC = () => {
         if (stompClientRef.current?.active) return;
 
         const token = user.accessToken || localStorage.getItem("accessToken") || "";
-        if (!token) return;
+        const connectHeaders: Record<string, string> | undefined = token
+            ? { Authorization: `Bearer ${token}` }
+            : undefined;
+
+        if (!token) {
+            console.warn("No access token in frontend storage. Trying WebSocket with cookie/session auth.");
+        }
 
         console.log("Opening Web Socket...");
 
+        const wsUrl = token
+            ? `http://localhost:8080/ws-soksabay?access_token=${encodeURIComponent(token)}`
+            : "http://localhost:8080/ws-soksabay";
+
         const client = new Client({
-            webSocketFactory: () => new SockJS("http://localhost:8080/ws-soksabay"),
-            connectHeaders: {
-                Authorization: `Bearer ${token}`,
-            },
+            webSocketFactory: () => new SockJS(wsUrl),
+            connectHeaders,
             debug: (str) => console.log("[STOMP]", str),
             reconnectDelay: 5000,
             onConnect: () => {

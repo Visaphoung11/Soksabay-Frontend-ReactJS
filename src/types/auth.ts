@@ -23,7 +23,7 @@ export interface AuthContextType {
     gender: string,
     password: string
   ) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   /** Re-fetches user profile from server and updates localStorage + state (for role refresh after approval). */
   refreshUser: () => Promise<void>;
 }

@@ -37,21 +37,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // 2. Try to rehydrate from persisted localStorage user (email/pw login)
+      // 2. Rehydrate quickly from local storage for token-based login flow.
       const storedUser = localStorage.getItem(KEYS.USER);
       if (storedUser) {
         const parsed: User = JSON.parse(storedUser);
         setUser(parsed);
-        setLoading(false);
-        return;
       }
 
-      // 3. OAuth2 cookie flow – check hint and call /users/me with the HttpOnly cookie
+      // 3. Cookie-first flow only when we have an auth hint.
+      // Avoid calling /users/me on first app load before login.
       const hasHint = localStorage.getItem(KEYS.HINT) === "true";
       if (hasHint) {
-        await fetchAndPersistUserFromServer();
-        return;
+        await fetchAndPersistUserFromServer(undefined, false);
       }
+      return;
     } catch {
       clearAuth();
     } finally {
@@ -63,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Calls /users/me using the HttpOnly cookie (OAuth2) OR the Bearer token.
    * Maps whatever the server returns into our User shape.
    */
-  const fetchAndPersistUserFromServer = async (bearerToken?: string) => {
+  const fetchAndPersistUserFromServer = async (bearerToken?: string, throwOnError = true) => {
     try {
       const config = bearerToken
         ? { headers: { Authorization: `Bearer ${bearerToken}` } }
@@ -77,13 +76,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         gender: raw.gender ?? "",
         contactNumber: raw.contactNumber ?? "",
         role: raw.role ?? raw.roles ?? ["USER"],
-        accessToken: bearerToken ?? raw.accessToken ?? localStorage.getItem(KEYS.ACCESS) ?? "",
-        refreshToken: raw.refreshToken ?? localStorage.getItem(KEYS.REFRESH) ?? "",
+        accessToken: bearerToken ?? raw.accessToken ?? "",
+        refreshToken: raw.refreshToken ?? "",
       };
       persistUser(mapped);
     } catch {
       clearAuth();
-      throw new Error("Could not fetch user");
+      if (throwOnError) {
+        throw new Error("Could not fetch user");
+      }
     }
   };
 
@@ -108,23 +109,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     password: string
   ) => {
     const res = await registerUser({ fullName, email, contactNumber, gender, password });
-    // Register doesn't return full user profile; build a minimal one
-    const u: User = {
-      userId: 0,
-      email,
-      fullName,
-      gender,
-      contactNumber,
-      role: ["USER"],
-      accessToken: res.accessToken,
-      refreshToken: res.refreshToken,
-    };
-    persistUser(u);
+
+    // Support old flow: backend returns tokens directly on register.
+    if (res?.accessToken) {
+      const u: User = {
+        userId: 0,
+        email,
+        fullName,
+        gender,
+        contactNumber,
+        role: ["USER"],
+        accessToken: res.accessToken,
+        refreshToken: res.refreshToken ?? "",
+      };
+      persistUser(u);
+      await fetchAndPersistUserFromServer(res.accessToken, false);
+    }
   };
 
   const loginWithEmail = async (email: string, password: string) => {
     const res = await loginUser({ email, password });
-    persistUser(res.data);
+    const raw = (res as any)?.data ?? {};
+
+    const mapped: User = {
+      userId: raw.userId ?? raw.id ?? 0,
+      email: raw.email ?? email,
+      fullName: raw.fullName ?? raw.name ?? email.split("@")[0] ?? "User",
+      gender: raw.gender ?? "",
+      contactNumber: raw.contactNumber ?? "",
+      role: raw.role ?? raw.roles ?? ["USER"],
+      accessToken: raw.accessToken ?? "",
+      refreshToken: raw.refreshToken ?? "",
+    };
+
+    persistUser(mapped);
+    await fetchAndPersistUserFromServer(mapped.accessToken || undefined, false);
   };
 
   const loginWithGoogle = () => {
@@ -132,8 +151,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     window.location.href = "http://localhost:8080/oauth2/authorization/google";
   };
 
-  const logout = () => {
-    clearAuth();
+  const logout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // ignore backend logout failures and clear local state anyway
+    } finally {
+      clearAuth();
+    }
   };
 
   const refreshUser = async () => {

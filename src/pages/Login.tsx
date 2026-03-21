@@ -70,7 +70,10 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       await register(fullName, regEmail, contactNumber, gender, regPassword);
-      navigate("/dashboard");
+      setTab("login");
+      setError("Registration successful. Please sign in.");
+      setRegPassword("");
+      setConfirmPassword("");
     } catch (err: any) {
       setError(err?.response?.data?.message || "Registration failed. Please try again.");
     } finally {
