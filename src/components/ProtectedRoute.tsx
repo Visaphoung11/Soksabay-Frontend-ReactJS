@@ -8,10 +8,9 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (loading)
     return <div style={{ padding: "50px" }}>Checking Session...</div>;
 
-  // Safe check for the ROLE_USER authority
-  const hasUserRole = user?.roles?.some((role: any) => {
-    const roleName = typeof role === "string" ? role : role.authority;
-    return roleName === "ROLE_USER";
+  const hasUserRole = user?.role?.some((role) => {
+    const normalized = role.toUpperCase();
+    return normalized === "ROLE_USER" || normalized === "USER";
   });
 
   if (!isAuthenticated || !hasUserRole) {

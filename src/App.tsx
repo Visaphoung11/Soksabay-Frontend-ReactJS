@@ -4,6 +4,7 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./components/Dashboard";
 import BecomeDriver from "./pages/BecomeDriver";
+import { ToastContainer } from "react-toastify";
 
 const AppContent = () => {
   const { loading } = useAuth();
@@ -39,6 +40,7 @@ const AppContent = () => {
 const App = () => (
   <AuthProvider>
     <AppContent />
+    <ToastContainer position="top-right" autoClose={4000} newestOnTop />
   </AuthProvider>
 );
 

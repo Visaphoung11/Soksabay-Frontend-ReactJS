@@ -2,13 +2,18 @@ import React, { useState, useEffect, useRef } from "react";
 import { getNotifications, markNotificationRead } from "../services/notificationService";
 import type { Notification } from "../types/auth";
 import { useAuth } from "../context/AuthContext";
+import { Client } from "@stomp/stompjs";
+import type { IMessage, IFrame } from "@stomp/stompjs";
+import SockJS from "sockjs-client/dist/sockjs";
+import { toast } from "react-toastify";
 
 const NotificationBell: React.FC = () => {
-    const { isAuthenticated, refreshUser } = useAuth();
+    const { isAuthenticated, refreshUser, user } = useAuth();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const stompClientRef = useRef<Client | null>(null);
 
     const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -40,6 +45,86 @@ const NotificationBell: React.FC = () => {
         const interval = setInterval(fetchNotifications, 30000);
         return () => clearInterval(interval);
     }, [isAuthenticated]);
+
+    useEffect(() => {
+        if (!isAuthenticated || !user?.email) return;
+        if (stompClientRef.current?.active) return;
+
+        const token = user.accessToken || localStorage.getItem("accessToken") || "";
+        if (!token) return;
+
+        console.log("Opening Web Socket...");
+
+        const client = new Client({
+            webSocketFactory: () => new SockJS("http://localhost:8080/ws-soksabay"),
+            connectHeaders: {
+                Authorization: `Bearer ${token}`,
+            },
+            debug: (str) => console.log("[STOMP]", str),
+            reconnectDelay: 5000,
+            onConnect: () => {
+                console.log("STOMP Connected");
+                console.log("Subscribing to topic:", `/topic/notifications/${user.email}`);
+
+                client.subscribe(`/topic/notifications/${user.email}`, async (message: IMessage) => {
+                    try {
+                        console.log("Incoming STOMP message:", message.body);
+                        const parsed = (() => {
+                            try {
+                                return JSON.parse(message.body);
+                            } catch {
+                                return { message: message.body };
+                            }
+                        })();
+
+                        const payload = parsed?.data ?? parsed;
+                        const incoming: Notification = {
+                            id: payload.id ?? Date.now(),
+                            title: payload.title ?? "Notification",
+                            message: payload.message ?? "You have a new notification",
+                            read: payload.read ?? false,
+                            createdAt: payload.createdAt ?? new Date().toISOString(),
+                        };
+
+                        setNotifications((prev) => {
+                            if (prev.some((n) => n.id === incoming.id)) return prev;
+                            return [incoming, ...prev];
+                        });
+
+                        toast.info(`${incoming.title}: ${incoming.message}`);
+
+                        const hasApproval =
+                            incoming.title.includes("Approved") ||
+                            incoming.message.includes("verified Driver");
+                        if (hasApproval) {
+                            await refreshUser();
+                        }
+                    } catch (error) {
+                        console.error("Failed to parse WebSocket notification:", error);
+                    }
+                });
+            },
+            onStompError: (frame: IFrame) => {
+                console.error("Broker reported error:", frame.headers["message"], frame.body);
+            },
+            onWebSocketError: (event: Event) => {
+                console.error("WebSocket error:", event);
+            },
+            onWebSocketClose: (event: CloseEvent) => {
+                console.warn("WebSocket closed:", event.code, event.reason);
+            },
+        });
+
+        client.activate();
+        stompClientRef.current = client;
+
+        return () => {
+            if (stompClientRef.current) {
+                stompClientRef.current.deactivate();
+                stompClientRef.current = null;
+            }
+        };
+    }, [isAuthenticated, user?.email, user?.accessToken]);
 
     // Close on outside click
     useEffect(() => {
