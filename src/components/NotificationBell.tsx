@@ -173,13 +173,13 @@ const NotificationBell: React.FC = () => {
             {/* Bell Button */}
             <button
                 onClick={() => { setOpen(!open); if (!open) fetchNotifications(); }}
-                className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 text-white transition-all duration-200"
+                className="relative flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100/50 hover:bg-slate-100 text-slate-400 hover:text-blue-600 border border-slate-200/50 transition-all duration-300 group"
             >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <svg className="w-5 h-5 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full shadow-lg">
+                    <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 bg-red-500 text-white text-[10px] font-black rounded-lg shadow-lg shadow-red-500/30 border-2 border-white">
                         {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                 )}
@@ -187,12 +187,12 @@ const NotificationBell: React.FC = () => {
 
             {/* Dropdown */}
             {open && (
-                <div className="absolute right-0 top-12 w-80 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                <div className="absolute right-0 top-14 w-[calc(100vw-2rem)] sm:w-80 bg-white border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-[2rem] z-[100] overflow-hidden animate-in">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50">
                         <div>
-                            <h3 className="text-white font-semibold text-sm">Notifications</h3>
-                            {unreadCount > 0 && <p className="text-white/40 text-xs">{unreadCount} unread</p>}
+                            <h3 className="text-slate-900 font-extrabold text-sm font-outfit uppercase tracking-tighter">Updates</h3>
+                            {unreadCount > 0 && <p className="text-blue-500 text-[10px] font-black uppercase tracking-widest">{unreadCount} New items</p>}
                         </div>
                         {unreadCount > 0 && (
                             <button
@@ -201,18 +201,18 @@ const NotificationBell: React.FC = () => {
                                     await Promise.all(unreadIds.map(markNotificationRead));
                                     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
                                 }}
-                                className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+                                className="text-[10px] font-black text-slate-300 hover:text-blue-600 uppercase tracking-widest transition-colors"
                             >
-                                Mark all read
+                                Clear All
                             </button>
                         )}
                     </div>
 
                     {/* List */}
-                    <div className="max-h-72 overflow-y-auto">
+                    <div className="max-h-80 overflow-y-auto scrollbar-hide">
                         {loading && (
-                            <div className="flex items-center justify-center py-8">
-                                <svg className="animate-spin w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24">
+                            <div className="flex items-center justify-center py-10 text-slate-300">
+                                <svg className="animate-spin w-6 h-6" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                 </svg>
@@ -220,38 +220,40 @@ const NotificationBell: React.FC = () => {
                         )}
 
                         {!loading && notifications.length === 0 && (
-                            <div className="text-center py-10">
-                                <svg className="w-10 h-10 text-white/10 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                </svg>
-                                <p className="text-white/30 text-sm">No notifications yet</p>
+                            <div className="text-center py-12 px-6">
+                                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-200">
+                                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                    </svg>
+                                </div>
+                                <p className="text-slate-400 text-xs font-bold italic">All caught up here.</p>
                             </div>
                         )}
 
                         {!loading && notifications.map((n) => (
                             <div
                                 key={n.id}
-                                className={`px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-all ${!n.read ? "bg-purple-500/5" : ""}`}
+                                className={`px-6 py-5 border-b border-slate-50 hover:bg-slate-50/50 transition-all cursor-pointer relative ${!n.read ? "bg-blue-50/30" : ""}`}
                             >
-                                <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-start gap-4">
+                                    <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${!n.read ? "bg-blue-600 animate-pulse" : "bg-slate-200"}`} />
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            {!n.read && <div className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0" />}
-                                            <p className={`text-sm font-medium truncate ${!n.read ? "text-white" : "text-white/60"}`}>
-                                                {n.title}
-                                            </p>
+                                        <p className={`text-sm font-bold truncate ${!n.read ? "text-slate-900" : "text-slate-500"}`}>
+                                            {n.title}
+                                        </p>
+                                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed line-clamp-2">{n.message}</p>
+                                        <div className="flex items-center justify-between mt-3">
+                                            <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{formatDate(n.createdAt)}</p>
+                                            {!n.read && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleMarkRead(n.id); }}
+                                                    className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:underline"
+                                                >
+                                                    Done
+                                                </button>
+                                            )}
                                         </div>
-                                        <p className="text-white/40 text-xs mt-0.5 leading-relaxed">{n.message}</p>
-                                        <p className="text-white/25 text-xs mt-1">{formatDate(n.createdAt)}</p>
                                     </div>
-                                    {!n.read && (
-                                        <button
-                                            onClick={() => handleMarkRead(n.id)}
-                                            className="flex-shrink-0 text-xs text-purple-400 hover:text-purple-300 transition-colors mt-0.5"
-                                        >
-                                            ✓
-                                        </button>
-                                    )}
                                 </div>
                             </div>
                         ))}
