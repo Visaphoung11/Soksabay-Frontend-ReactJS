@@ -5,6 +5,8 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Dashboard from "./components/Dashboard";
 import BecomeDriver from "./pages/BecomeDriver";
+import DriverTrips from "./pages/DriverTrips";
+import PublicTrips from "./pages/PublicTrips";
 import { ToastContainer } from "react-toastify";
 
 const AppContent = () => {
@@ -18,6 +20,14 @@ const AppContent = () => {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route
+          path="/trips"
+          element={
+            <ProtectedRoute>
+              <PublicTrips />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
@@ -30,6 +40,14 @@ const AppContent = () => {
           element={
             <ProtectedRoute>
               <BecomeDriver />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/driver/trips"
+          element={
+            <ProtectedRoute>
+              <DriverTrips />
             </ProtectedRoute>
           }
         />

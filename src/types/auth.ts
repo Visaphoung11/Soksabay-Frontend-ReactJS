@@ -59,3 +59,46 @@ export interface MediaUploadResponse {
   width: number;
   height: number;
 }
+
+// ─── Trips ───────────────────────────────────────────────────────────────────
+export type TripStatus = "AVAILABLE" | "FULL" | "CANCELLED";
+
+export interface Trip {
+  id: number;
+  title: string;
+  description: string;
+  origin: string;
+  destination: string;
+  pricePerSeat: number;
+  totalSeats: number;
+  availableSeats: number;
+  departureTime: string;
+  status: TripStatus;
+  images: string[];
+  driverName: string;
+  categoryName: string;
+}
+
+export interface TripPayload {
+  title: string;
+  description: string;
+  origin: string;
+  destination: string;
+  pricePerSeat: number;
+  totalSeats: number;
+  departureTime: string; // ISO-8601
+  categoryId: number;
+  imageUrls: string[];
+}
+
+export interface TripSearchParams {
+  origin?: string;
+  destination?: string;
+  date?: string; // YYYY-MM-DD
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  description: string;
+}

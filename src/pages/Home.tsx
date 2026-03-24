@@ -43,10 +43,16 @@ const Home: React.FC = () => {
                     Connect with verified local drivers and unlock hidden gems across the Kingdom. Effortless booking, professional service, and unforgettable memories.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <button className="w-full sm:w-auto px-10 py-5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-[2rem] shadow-2xl shadow-blue-600/30 transition-all transform hover:-translate-y-1 text-sm uppercase tracking-tight">
+                    <button
+                        onClick={() => navigate("/trips")}
+                        className="w-full sm:w-auto px-10 py-5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-[2rem] shadow-2xl shadow-blue-600/30 transition-all transform hover:-translate-y-1 text-sm uppercase tracking-tight"
+                    >
                         Explore Available Trips
                     </button>
-                    <button className="w-full sm:w-auto px-10 py-5 bg-white border-2 border-slate-100 text-slate-900 font-black rounded-[2rem] hover:bg-slate-50 transition-all text-sm uppercase tracking-tight">
+                    <button
+                        onClick={() => navigate("/dashboard")}
+                        className="w-full sm:w-auto px-10 py-5 bg-white border-2 border-slate-100 text-slate-900 font-black rounded-[2rem] hover:bg-slate-50 transition-all text-sm uppercase tracking-tight"
+                    >
                         How it Works
                     </button>
                 </div>
