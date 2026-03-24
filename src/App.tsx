@@ -1,12 +1,13 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
-import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Dashboard from "./components/Dashboard";
 import BecomeDriver from "./pages/BecomeDriver";
 import DriverTrips from "./pages/DriverTrips";
 import PublicTrips from "./pages/PublicTrips";
+import MyBookings from "./pages/MyBookings";
+import DriverBookingRequests from "./pages/DriverBookingRequests";
 import { ToastContainer } from "react-toastify";
 
 const AppContent = () => {
@@ -17,16 +18,9 @@ const AppContent = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<PublicTrips />} />
         <Route path="/login" element={<Login />} />
-        <Route
-          path="/trips"
-          element={
-            <ProtectedRoute>
-              <PublicTrips />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/trips" element={<PublicTrips />} />
         <Route
           path="/dashboard"
           element={
@@ -51,7 +45,23 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+          path="/bookings"
+          element={
+            <ProtectedRoute>
+              <MyBookings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/driver/bookings/requests"
+          element={
+            <ProtectedRoute>
+              <DriverBookingRequests />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/trips" replace />} />
       </Routes>
     </Router>
   );

@@ -102,3 +102,30 @@ export interface Category {
   name: string;
   description: string;
 }
+
+// ─── Bookings ───────────────────────────────────────────────────────────────
+export type BookingStatus = "PENDING" | "CONFIRMED" | "REJECTED";
+
+export interface BookingTripInfo {
+  id: number;
+  title: string;
+  destination: string;
+  departureTime: string;
+  driverName: string;
+}
+
+export interface Booking {
+  id: number;
+  seatsBooked: number;
+  totalPrice: number;
+  status: BookingStatus;
+  createdAt: string;
+  trip: BookingTripInfo;
+  passengerName: string;
+  passengerPhone: string;
+}
+
+export interface CreateBookingPayload {
+  tripId: number;
+  seatsBooked: number;
+}

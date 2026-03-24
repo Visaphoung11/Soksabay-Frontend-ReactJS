@@ -7,9 +7,11 @@ interface AppLayoutProps {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
+  publicMode?: boolean;
+  onAuthOpen?: () => void;
 }
 
-const AppLayout: React.FC<AppLayoutProps> = ({ title, subtitle, children }) => {
+const AppLayout: React.FC<AppLayoutProps> = ({ title, subtitle, children, publicMode = false, onAuthOpen }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -20,7 +22,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ title, subtitle, children }) => {
   const navItems = [
     { label: "Dashboard", path: "/dashboard", icon: <HomeIcon /> },
     { label: "Explore Trips", path: "/trips", icon: <CompassIcon /> },
+    { label: "My Bookings", path: "/bookings", icon: <TicketIcon /> },
     ...(isDriver ? [{ label: "Driver Trips", path: "/driver/trips", icon: <CarIcon /> }] : []),
+    ...(isDriver ? [{ label: "Booking Requests", path: "/driver/bookings/requests", icon: <InboxIcon /> }] : []),
     ...(!isDriver ? [{ label: "Become Driver", path: "/become-driver", icon: <SparkIcon /> }] : []),
   ];
 
@@ -29,8 +33,36 @@ const AppLayout: React.FC<AppLayoutProps> = ({ title, subtitle, children }) => {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/login", { replace: true });
+    navigate("/trips", { replace: true });
   };
+
+  if (publicMode) {
+    return (
+      <div className="min-h-screen bg-slate-50 font-inter">
+        <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 lg:px-10 h-20 flex items-center justify-between">
+          <button onClick={() => navigate("/trips")} className="text-2xl font-black text-blue-600 font-outfit tracking-tighter">
+            Soksabay Go
+          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onAuthOpen}
+              className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-semibold"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={onAuthOpen}
+              className="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-semibold"
+            >
+              Get Started
+            </button>
+          </div>
+        </header>
+
+        <main className="flex-1 p-6 lg:p-10 max-w-7xl w-full mx-auto">{children}</main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 font-inter">
@@ -130,6 +162,12 @@ const CarIcon = () => (
 );
 const SparkIcon = () => (
   <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+);
+const TicketIcon = () => (
+  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5V3H9v2H5v14h14V5h-4zM9 11h6m-6 4h6" /></svg>
+);
+const InboxIcon = () => (
+  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0l-2.586 2.586A2 2 0 0116 16H8a2 2 0 01-1.414-.586L4 13m16 0H4" /></svg>
 );
 
 export default AppLayout;

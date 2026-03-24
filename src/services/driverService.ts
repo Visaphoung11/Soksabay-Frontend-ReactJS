@@ -1,6 +1,8 @@
 import { api } from "../lib/axios";
 import type {
+    Booking,
     Category,
+    CreateBookingPayload,
     DriverApplication,
     MediaUploadResponse,
     Trip,
@@ -141,4 +143,26 @@ export const searchPublicTrips = async (params: TripSearchParams = {}): Promise<
 export const getCategories = async (): Promise<Category[]> => {
     const res = await api.get<Category[] | { data: Category[] }>("/categories");
     return Array.isArray(res.data) ? res.data : res.data.data;
+};
+
+export const createBooking = async (payload: CreateBookingPayload): Promise<Booking> => {
+    const res = await api.post<Booking | { data: Booking }>("/bookings", payload);
+    return (res.data as any)?.data ?? (res.data as Booking);
+};
+
+export const getMyBookings = async (): Promise<Booking[]> => {
+    const res = await api.get<Booking[] | { data: Booking[] }>("/bookings/my");
+    return Array.isArray(res.data) ? res.data : res.data.data;
+};
+
+export const getDriverBookingRequests = async (): Promise<Booking[]> => {
+    const res = await api.get<Booking[] | { data: Booking[] }>("/driver/bookings/requests");
+    return Array.isArray(res.data) ? res.data : res.data.data;
+};
+
+export const respondDriverBooking = async (id: number, accept: boolean): Promise<Booking> => {
+    const res = await api.patch<Booking | { data: Booking }>(`/driver/bookings/${id}/respond`, null, {
+        params: { accept },
+    });
+    return (res.data as any)?.data ?? (res.data as Booking);
 };
