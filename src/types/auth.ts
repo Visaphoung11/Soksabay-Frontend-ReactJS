@@ -77,6 +77,7 @@ export interface Trip {
   images: string[];
   driverName: string;
   categoryName: string;
+  categoryId?: number;
 }
 
 export interface TripPayload {

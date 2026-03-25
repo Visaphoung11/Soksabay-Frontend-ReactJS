@@ -136,7 +136,9 @@ const DriverTrips: React.FC = () => {
       setPricePerSeat(Number(trip.pricePerSeat));
       setTotalSeats(Number(trip.totalSeats));
       setDepartureTime(toInputDateTime(trip.departureTime));
-      setCategoryId(1);
+      setCategoryId(
+        trip.categoryId ?? categories.find((c) => c.name === trip.categoryName)?.id ?? 1
+      );
       setExistingImageUrls(trip.images || []);
       setImageFiles([]);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -150,6 +152,7 @@ const DriverTrips: React.FC = () => {
     setSaving(true);
     try {
       const uploadedUrls = imageFiles.length ? await uploadMultipleImages(imageFiles) : [];
+      const mergedImageUrls = Array.from(new Set([...existingImageUrls, ...uploadedUrls]));
       const payload: TripPayload = {
         title,
         description,
@@ -159,7 +162,7 @@ const DriverTrips: React.FC = () => {
         totalSeats: Number(totalSeats),
         departureTime: departureTime.length === 16 ? `${departureTime}:00` : departureTime,
         categoryId: Number(categoryId),
-        imageUrls: [...existingImageUrls, ...uploadedUrls],
+        imageUrls: mergedImageUrls,
       };
 
       if (payload.imageUrls.length === 0) {
@@ -212,7 +215,7 @@ const DriverTrips: React.FC = () => {
         <div className="max-w-lg bg-white border border-slate-200 rounded-2xl p-6 text-center">
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Driver Access Required</h2>
           <p className="text-slate-500 mb-6">You need ROLE_DRIVER to manage trips.</p>
-          <button onClick={() => navigate("/dashboard")} className="px-5 py-3 rounded-xl bg-blue-600 text-white">Back to Dashboard</button>
+          <button onClick={() => navigate("/dashboard")} className="px-5 py-3 rounded-xl bg-[#00eb5b] text-slate-900 hover:bg-[#00ab42] hover:text-white transition-colors">Back to Dashboard</button>
         </div>
       </div>
     );
@@ -331,7 +334,7 @@ const DriverTrips: React.FC = () => {
             </div>
           )}
 
-          <button disabled={saving} className="mt-4 px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50">
+          <button disabled={saving} className="mt-4 px-6 py-3 rounded-xl bg-[#00eb5b] text-slate-900 font-semibold hover:bg-[#00ab42] hover:text-white disabled:opacity-50 transition-colors">
             {saving ? "Saving..." : editId ? "Update Trip" : "Create Trip"}
           </button>
         </form>
@@ -348,7 +351,7 @@ const DriverTrips: React.FC = () => {
                 <div key={trip.id} className="border border-slate-200 rounded-2xl overflow-hidden bg-white hover:shadow-xl transition-all">
                   <div className="relative">
                     <img src={trip.images?.[0] || "https://placehold.co/600x360?text=Trip+Image"} alt={trip.title} className="w-full h-44 object-cover" />
-                    <div className="absolute top-3 left-3 w-9 h-9 rounded-xl bg-white/90 text-blue-700 font-black text-xs flex items-center justify-center shadow">
+                    <div className="absolute top-3 left-3 w-9 h-9 rounded-xl bg-white/90 text-[#00ab42] font-black text-xs flex items-center justify-center shadow">
                       SG
                     </div>
                     <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-black/70 text-white">
@@ -362,7 +365,7 @@ const DriverTrips: React.FC = () => {
                       {trip.description || "No description provided for this trip."}
                     </p>
                     <div className="mt-2 flex items-center justify-between text-xs">
-                      <span className="text-blue-600 font-bold">${trip.pricePerSeat}/seat</span>
+                      <span className="text-[#00ab42] font-bold">${trip.pricePerSeat}/seat</span>
                       <span className="text-slate-500">{trip.availableSeats}/{trip.totalSeats} seats</span>
                     </div>
                     <p className="text-xs text-slate-500 mt-1">{new Date(trip.departureTime).toLocaleString()}</p>
@@ -397,7 +400,7 @@ const DriverTrips: React.FC = () => {
                   <img
                     src={img}
                     alt={`Trip ${idx + 1}`}
-                    className={`w-20 h-20 rounded-lg object-cover border-2 ${activeImage === idx ? "border-blue-500" : "border-transparent"}`}
+                    className={`w-20 h-20 rounded-lg object-cover border-2 ${activeImage === idx ? "border-[#00ab42]" : "border-transparent"}`}
                   />
                 </button>
               ))}

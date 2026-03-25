@@ -2,8 +2,10 @@
 
 @layer base {
   :root {
-    --primary: #0066FF;
-    --primary-hover: #0052CC;
+    --sub-brands-trip-brand: #00eb5b;
+    --sub-brands-trip-brand-hover: #00ab42;
+    --primary: #00eb5b;
+    --primary-hover: #00ab42;
     --secondary: #D4AF37;
     --background: #FFFFFF;
     --foreground: #0F172A;

@@ -16,40 +16,40 @@ const Dashboard: React.FC = () => {
         <div className="flex flex-wrap gap-2 mb-8">
           {user?.role?.map((r: string) => (
             <span key={r} className="px-4 py-2 bg-white border border-slate-100 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-[#00ab42] animate-pulse" />
               {r}
             </span>
           ))}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <DashboardCard label="Trips Completed" value="12" icon={<MapIcon />} color="text-blue-600" bg="bg-blue-50/50" />
+          <DashboardCard label="Trips Completed" value="12" icon={<MapIcon />} color="text-[#00ab42]" bg="bg-[#00eb5b]/10" />
           <DashboardCard label="Active Alerts" value="2" icon={<BellIcon />} color="text-amber-600" bg="bg-amber-50/50" />
-          <DashboardCard label="Member Points" value="2,450" icon={<CheckIcon />} color="text-emerald-600" bg="bg-emerald-50/50" />
+          <DashboardCard label="Member Points" value="2,450" icon={<CheckIcon />} color="text-[#00ab42]" bg="bg-[#00eb5b]/10" />
         </div>
       </section>
 
       <section className="mb-14">
         {!isDriver ? (
-          <div className="relative overflow-hidden bg-slate-900 rounded-[3rem] p-10 md:p-16 border border-slate-800 shadow-2xl shadow-blue-900/20">
+          <div className="relative overflow-hidden bg-slate-900 rounded-[3rem] p-10 md:p-16 border border-slate-800 shadow-2xl shadow-[#00eb5b]/20">
             <div className="relative z-10 max-w-xl">
-              <span className="text-blue-400 font-black tracking-[0.2em] uppercase text-[10px]">Onboarding Program</span>
+              <span className="text-[#00eb5b] font-black tracking-[0.2em] uppercase text-[10px]">Onboarding Program</span>
               <h3 className="text-4xl font-black text-white mt-4 mb-8 font-outfit tracking-tight leading-tight">Empower your drive. Showcase Cambodia.</h3>
               <p className="text-slate-400 mb-10 leading-relaxed font-medium">
                 Join our elite network of professional guides and drivers. Start earning by offering unforgettable journeys across the Kingdom of Wonder.
               </p>
               <button
                 onClick={() => navigate("/become-driver")}
-                className="px-10 py-5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-[2rem] shadow-xl shadow-blue-600/30 transition-all transform hover:-translate-y-1 active:translate-y-0 text-sm uppercase tracking-tight"
+                className="px-10 py-5 bg-[#00eb5b] hover:bg-[#00ab42] hover:text-white text-slate-900 font-black rounded-[2rem] shadow-xl shadow-[#00eb5b]/30 transition-all transform hover:-translate-y-1 active:translate-y-0 text-sm uppercase tracking-tight"
               >
                 Start Application Hub ➔
               </button>
             </div>
           </div>
         ) : (
-          <div className="bg-emerald-50 border-2 border-emerald-100 rounded-[3rem] p-10 flex flex-col md:flex-row items-center justify-between gap-8 border-dashed">
+          <div className="bg-[#00eb5b]/10 border-2 border-[#00eb5b]/30 rounded-[3rem] p-10 flex flex-col md:flex-row items-center justify-between gap-8 border-dashed">
             <div className="flex items-center gap-8">
-              <div className="w-20 h-20 rounded-[2.5rem] bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-xl shadow-emerald-500/10">
+              <div className="w-20 h-20 rounded-[2.5rem] bg-[#00eb5b]/20 flex items-center justify-center text-[#00ab42] shadow-xl shadow-[#00eb5b]/15">
                 <CheckIcon size={40} />
               </div>
               <div>
@@ -59,7 +59,7 @@ const Dashboard: React.FC = () => {
             </div>
             <button
               onClick={() => navigate("/driver/trips")}
-              className="px-8 py-4 bg-white border-2 border-emerald-200 text-emerald-700 font-black rounded-2xl hover:bg-emerald-100 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/5 uppercase text-xs tracking-widest"
+              className="px-8 py-4 bg-white border-2 border-[#00eb5b]/40 text-[#00ab42] font-black rounded-2xl hover:bg-[#00eb5b]/20 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-[#00eb5b]/10 uppercase text-xs tracking-widest"
             >
               Access Driver Trips
             </button>
@@ -92,7 +92,7 @@ const DashboardCard = ({ label, value, icon, color, bg }: any) => (
 const ProfileItem = ({ label, value, icon }: any) => (
   <div className="bg-white p-5 rounded-2xl border border-slate-100">
     <div className="flex items-center gap-2.5 mb-2.5">
-      <div className="text-blue-500">{icon}</div>
+      <div className="text-[#00ab42]">{icon}</div>
       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</span>
     </div>
     <p className="text-sm font-bold text-slate-800 truncate">{value}</p>

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import type { Trip } from "../types/auth";
 import { createBooking, getPublicTripById, searchPublicTrips } from "../services/driverService";
 import AppLayout from "../components/AppLayout";
@@ -14,8 +15,33 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const staticDestinations = [
+  {
+    name: "Angkor Wat",
+    place: "Siem Reap",
+    desc: "Sunrise temples, ancient Khmer wonders, and unforgettable history.",
+    image:
+      "https://ucarecdn.com/5e38f865-3e47-45fb-b0e9-9d8ffae0098f/-/crop/4992x2622/0,354/-/resize/1200x630/",
+  },
+  {
+    name: "Koh Rong",
+    place: "Sihanoukville",
+    desc: "Crystal water, white sand beaches, and island vibes for weekend escapes.",
+    image:
+      "https://www.shutterstock.com/shutterstock/videos/3578514831/thumb/1.jpg?ip=x480",
+  },
+  {
+    name: "Kampot Riverside",
+    place: "Kampot",
+    desc: "Relaxed riverside views, pepper farms, and scenic countryside rides.",
+    image:
+      "https://www.pelago.com/img/products/KH-Cambodia/bokor-national-park-private-day-trip-from-phnom-penh/38a7bd5f-dbfc-4f5c-a5fc-2dc14cf643e8_bokor-national-park-private-day-trip-from-phnom-penh.jpg",
+  },
+];
+
 const PublicTrips: React.FC = () => {
   const { isAuthenticated, loginWithEmail, register, loginWithGoogle } = useAuth();
+  const navigate = useNavigate();
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [date, setDate] = useState("");
@@ -26,7 +52,6 @@ const PublicTrips: React.FC = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [seatsBooked, setSeatsBooked] = useState<number>(1);
   const [bookingLoading, setBookingLoading] = useState(false);
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authTab, setAuthTab] = useState<"login" | "register">("login");
   const [authLoading, setAuthLoading] = useState(false);
@@ -78,7 +103,9 @@ const PublicTrips: React.FC = () => {
     if (!selectedTrip) return;
 
     if (!isAuthenticated) {
-      setShowLoginPrompt(true);
+      setAuthTab("login");
+      setAuthError("");
+      setShowAuthModal(true);
       return;
     }
 
@@ -110,8 +137,8 @@ const PublicTrips: React.FC = () => {
     try {
       await loginWithEmail(loginEmail, loginPassword);
       setShowAuthModal(false);
-      setShowLoginPrompt(false);
       toast.success("Logged in successfully. You can book now.");
+      navigate("/dashboard");
     } catch (err: any) {
       setAuthError(err?.response?.data?.message || "Invalid email or password");
     } finally {
@@ -131,8 +158,8 @@ const PublicTrips: React.FC = () => {
     try {
       await register(fullName, regEmail, contactNumber, gender, regPassword);
       setShowAuthModal(false);
-      setShowLoginPrompt(false);
       toast.success("Account created. You can book now.");
+      navigate("/dashboard");
     } catch (err: any) {
       setAuthError(err?.response?.data?.message || "Registration failed");
     } finally {
@@ -152,7 +179,45 @@ const PublicTrips: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto">
 
+        <section className="mb-8 rounded-3xl overflow-hidden bg-white border border-slate-200">
+          <div className="relative h-[320px] md:h-[420px]">
+            <img
+              src="https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=2000&q=80"
+              alt="Cambodia tour destinations"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-black/10" />
+            <div className="absolute inset-0 p-6 md:p-10 flex flex-col justify-end">
+              <p className="text-[#00eb5b] text-xs md:text-sm font-black uppercase tracking-[0.2em] mb-2">BOOK TOURS IN CAMBODIA</p>
+              <h1 className="text-white text-3xl md:text-5xl font-black max-w-3xl leading-tight">Discover Cambodia like you imagine and see style adventures</h1>
+              <p className="text-white/85 mt-3 text-sm md:text-base max-w-2xl">
+                Compare routes, explore destination highlights, and book trusted drivers for your journey across Cambodia.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-black text-slate-900">Top Cambodia Destinations</h2>
+            <p className="text-sm text-slate-500">Static highlights inspired by Tripadvisor</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {staticDestinations.map((d) => (
+              <div key={d.name} className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all">
+                <img src={d.image} alt={d.name} className="w-full h-48 object-cover" />
+                <div className="p-4">
+                  <p className="text-[11px] font-black uppercase text-[#00ab42] tracking-widest">{d.place}</p>
+                  <h3 className="text-lg font-black text-slate-900 mt-1">{d.name}</h3>
+                  <p className="text-sm text-slate-600 mt-2">{d.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <div className="bg-white rounded-2xl border border-slate-200 p-4 md:p-6 mb-6">
+          <h2 className="text-xl font-black text-slate-900 mb-4">Find your trip</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <input
               value={origin}
@@ -176,7 +241,7 @@ const PublicTrips: React.FC = () => {
             <div className="flex gap-2">
               <button
                 onClick={fetchTrips}
-                className="flex-1 px-4 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700"
+                className="flex-1 px-4 py-3 rounded-xl bg-[#00eb5b] text-slate-900 font-semibold hover:bg-[#00ab42] hover:text-white transition-colors"
               >
                 Search
               </button>
@@ -199,7 +264,23 @@ const PublicTrips: React.FC = () => {
         {error && <div className="mb-4 bg-red-50 text-red-600 border border-red-200 rounded-xl px-4 py-3 text-sm">{error}</div>}
 
         {loading ? (
-          <div className="py-20 text-center text-slate-500">Loading trips...</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" aria-label="Loading trips">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className="bg-white rounded-3xl border border-slate-200 overflow-hidden animate-pulse">
+                <div className="w-full h-52 bg-slate-200" />
+                <div className="p-4 space-y-3">
+                  <div className="h-4 bg-slate-200 rounded w-3/4" />
+                  <div className="h-3 bg-slate-200 rounded w-1/2" />
+                  <div className="h-3 bg-slate-200 rounded w-full" />
+                  <div className="h-3 bg-slate-200 rounded w-5/6" />
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="h-4 bg-slate-200 rounded w-24" />
+                    <div className="h-4 bg-slate-200 rounded w-20" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : trips.length === 0 ? (
           <div className="py-20 text-center text-slate-500">No trips found.</div>
         ) : (
@@ -219,7 +300,7 @@ const PublicTrips: React.FC = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/10" />
 
                   <div className="absolute top-3 left-3 flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-xl bg-white/90 text-blue-700 font-black text-xs flex items-center justify-center shadow-lg">
+                    <div className="w-10 h-10 rounded-xl bg-white/90 text-[#00ab42] font-black text-xs flex items-center justify-center shadow-lg">
                       SG
                     </div>
                     <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white/90 text-slate-700">
@@ -232,7 +313,7 @@ const PublicTrips: React.FC = () => {
                       <h3 className="font-black text-white text-lg leading-tight line-clamp-1">{trip.title}</h3>
                       <p className="text-white/80 text-xs line-clamp-1">{trip.origin} → {trip.destination}</p>
                     </div>
-                    <span className="shrink-0 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-blue-600 text-white">
+                    <span className="shrink-0 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-[#00eb5b] text-slate-900">
                       {trip.categoryName || "Trip"}
                     </span>
                   </div>
@@ -243,7 +324,7 @@ const PublicTrips: React.FC = () => {
                     {trip.description || "No description provided for this trip."}
                   </p>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-blue-600 font-black text-base">${trip.pricePerSeat}/seat</span>
+                    <span className="text-[#00ab42] font-black text-base">${trip.pricePerSeat}/seat</span>
                     <span className="text-slate-500 font-semibold">{trip.availableSeats}/{trip.totalSeats} seats</span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-500">
@@ -281,7 +362,7 @@ const PublicTrips: React.FC = () => {
                   <img
                     src={img}
                     alt={`Trip ${idx + 1}`}
-                    className={`w-20 h-20 rounded-lg object-cover border-2 ${activeImage === idx ? "border-blue-500" : "border-transparent"}`}
+                    className={`w-20 h-20 rounded-lg object-cover border-2 ${activeImage === idx ? "border-[#00ab42]" : "border-transparent"}`}
                   />
                 </button>
               ))}
@@ -314,7 +395,7 @@ const PublicTrips: React.FC = () => {
                 <button
                   onClick={handleCreateBooking}
                   disabled={bookingLoading || Number(selectedTrip.availableSeats) <= 0}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-[#00eb5b] text-slate-900 font-semibold hover:bg-[#00ab42] hover:text-white disabled:opacity-50 transition-colors"
                 >
                   {bookingLoading ? "Booking..." : Number(selectedTrip.availableSeats) <= 0 ? "No Seats Available" : "Book This Trip"}
                 </button>
@@ -324,41 +405,13 @@ const PublicTrips: React.FC = () => {
         </div>
       )}
 
-      {showLoginPrompt && (
-        <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm p-4 flex items-center justify-center">
-          <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 p-6">
-            <h3 className="text-xl font-black text-slate-900 mb-2">Login Required</h3>
-            <p className="text-sm text-slate-600 mb-5">
-              You can browse all public trips without login. To book a trip, please login first.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowLoginPrompt(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setShowLoginPrompt(false);
-                  setShowAuthModal(true);
-                }}
-                className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700"
-              >
-                Continue
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {showAuthModal && (
         <div className="fixed inset-0 z-[70] bg-slate-950/45 backdrop-blur-md p-4 flex items-center justify-center">
-          <div className="w-full max-w-md bg-white border border-slate-100 rounded-[2rem] shadow-2xl shadow-blue-900/20 p-7 transform transition-all duration-300 scale-100">
+          <div className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] shadow-2xl shadow-emerald-900/20 p-7 transform transition-all duration-300 scale-100">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h3 className="text-2xl font-black text-slate-900 font-outfit">Welcome Back</h3>
-                <p className="text-xs text-slate-500 mt-1">Login or create account to continue booking</p>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Welcome to Soksabay Go</h3>
+                <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">Login or register to start your Cambodia trip</p>
               </div>
               <button onClick={() => setShowAuthModal(false)} className="text-slate-500 hover:text-slate-900">✕</button>
             </div>
@@ -369,7 +422,7 @@ const PublicTrips: React.FC = () => {
                   setAuthTab("login");
                   setAuthError("");
                 }}
-                className={`flex-1 py-2 text-sm rounded-xl font-semibold ${authTab === "login" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"}`}
+                className={`flex-1 py-2 text-sm rounded-xl font-bold ${authTab === "login" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500"}`}
               >
                 Sign In
               </button>
@@ -378,7 +431,7 @@ const PublicTrips: React.FC = () => {
                   setAuthTab("register");
                   setAuthError("");
                 }}
-                className={`flex-1 py-2 text-sm rounded-xl font-semibold ${authTab === "register" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500"}`}
+                className={`flex-1 py-2 text-sm rounded-xl font-bold ${authTab === "register" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500"}`}
               >
                 Register
               </button>
@@ -404,7 +457,7 @@ const PublicTrips: React.FC = () => {
                   onChange={(e) => setLoginPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200"
                 />
-                <button disabled={authLoading} className="w-full py-3.5 rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-lg shadow-blue-600/20 disabled:opacity-50 transition-all">
+                <button disabled={authLoading} className="w-full py-3.5 rounded-2xl bg-emerald-700 text-white font-bold hover:bg-emerald-800 shadow-lg shadow-emerald-700/20 disabled:opacity-50 transition-all">
                   {authLoading ? "Signing in..." : "Sign In"}
                 </button>
               </form>
@@ -459,15 +512,20 @@ const PublicTrips: React.FC = () => {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200"
                 />
-                <button disabled={authLoading} className="w-full py-3.5 rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-lg shadow-blue-600/20 disabled:opacity-50 transition-all">
+                <button disabled={authLoading} className="w-full py-3.5 rounded-2xl bg-emerald-700 text-white font-bold hover:bg-emerald-800 shadow-lg shadow-emerald-700/20 disabled:opacity-50 transition-all">
                   {authLoading ? "Creating account..." : "Create Account"}
                 </button>
               </form>
             )}
 
+            <div className="relative my-4 text-center">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
+              <span className="relative bg-white px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">or continue with</span>
+            </div>
+
             <button
               onClick={() => loginWithGoogle()}
-              className="w-full mt-3 py-3.5 rounded-2xl border border-slate-200 bg-white hover:bg-blue-50/40 text-slate-700 font-bold flex items-center justify-center gap-3 transition-all"
+              className="w-full py-3.5 rounded-2xl border border-slate-200 bg-white hover:bg-emerald-50/40 text-slate-700 font-bold flex items-center justify-center gap-3 transition-all"
             >
               <GoogleIcon />
               Continue with Google

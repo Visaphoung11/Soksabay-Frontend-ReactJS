@@ -84,9 +84,9 @@ const BecomeDriver: React.FC = () => {
     if (success) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-                <div className="bg-white rounded-[3rem] p-12 max-w-lg w-full text-center shadow-2xl shadow-blue-900/10 border border-white">
-                    <div className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-8 animate-bounce">
-                        <svg className="w-12 h-12 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="bg-white rounded-[3rem] p-12 max-w-lg w-full text-center shadow-2xl shadow-[#00eb5b]/15 border border-white">
+                    <div className="w-24 h-24 rounded-full bg-[#00eb5b]/20 flex items-center justify-center mx-auto mb-8 animate-bounce">
+                        <svg className="w-12 h-12 text-[#00ab42]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
@@ -94,8 +94,8 @@ const BecomeDriver: React.FC = () => {
                     <p className="text-slate-500 mb-10 leading-relaxed font-medium">
                         Your application is now being reviewed by our team. We'll notify you as soon as you're cleared for the road.
                     </p>
-                    <div className="bg-blue-50 rounded-2xl p-6 mb-10 border border-blue-100">
-                        <p className="text-blue-700 text-sm font-bold flex items-center justify-center gap-2 uppercase tracking-widest">
+                    <div className="bg-[#00eb5b]/10 rounded-2xl p-6 mb-10 border border-[#00eb5b]/30">
+                        <p className="text-[#00ab42] text-sm font-bold flex items-center justify-center gap-2 uppercase tracking-widest">
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                             </svg>
@@ -119,7 +119,7 @@ const BecomeDriver: React.FC = () => {
             <header className="bg-white border-b border-slate-100 h-20 flex items-center px-6 lg:px-12 sticky top-0 z-50">
                 <button
                     onClick={() => navigate("/dashboard")}
-                    className="flex items-center gap-2 text-slate-400 hover:text-blue-600 transition-colors font-bold text-sm tracking-tight"
+                    className="flex items-center gap-2 text-slate-400 hover:text-[#00ab42] transition-colors font-bold text-sm tracking-tight"
                 >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
@@ -135,13 +135,13 @@ const BecomeDriver: React.FC = () => {
                 {/* Visual Step Indicator */}
                 <div className="flex items-center justify-between mb-12 px-4">
                     <StepIcon number={1} label="Identity" active={step >= 1} done={step > 1} />
-                    <div className={`flex-1 h-1 mx-4 rounded-full ${step > 1 ? "bg-blue-600" : "bg-slate-200"}`} />
+                    <div className={`flex-1 h-1 mx-4 rounded-full ${step > 1 ? "bg-[#00eb5b]" : "bg-slate-200"}`} />
                     <StepIcon number={2} label="Documents" active={step >= 2} done={step > 2} />
-                    <div className={`flex-1 h-1 mx-4 rounded-full ${step > 2 ? "bg-blue-600" : "bg-slate-200"}`} />
+                    <div className={`flex-1 h-1 mx-4 rounded-full ${step > 2 ? "bg-[#00eb5b]" : "bg-slate-200"}`} />
                     <StepIcon number={3} label="Review" active={step >= 3} done={success} />
                 </div>
 
-                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-blue-900/5 overflow-hidden border border-white">
+                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-[#00eb5b]/10 overflow-hidden border border-white">
                     <form onSubmit={handleSubmit}>
                         {step === 1 && (
                             <div className="p-10 lg:p-14">
@@ -160,7 +160,7 @@ const BecomeDriver: React.FC = () => {
                                             onChange={(e) => setNationalId(e.target.value)}
                                             placeholder="E.g. NID0123456"
                                             required
-                                            className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-2xl px-6 py-4 font-bold focus:bg-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 transition-all outline-none"
+                                            className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-2xl px-6 py-4 font-bold focus:bg-white focus:ring-4 focus:ring-[#00eb5b]/20 focus:border-[#00ab42] transition-all outline-none"
                                         />
                                     </FieldWrapper>
 
@@ -171,7 +171,7 @@ const BecomeDriver: React.FC = () => {
                                             onChange={(e) => setLicenseNumber(e.target.value)}
                                             placeholder="E.g. DL-9988-77"
                                             required
-                                            className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-2xl px-6 py-4 font-bold focus:bg-white focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 transition-all outline-none"
+                                            className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-2xl px-6 py-4 font-bold focus:bg-white focus:ring-4 focus:ring-[#00eb5b]/20 focus:border-[#00ab42] transition-all outline-none"
                                         />
                                     </FieldWrapper>
 
@@ -182,7 +182,7 @@ const BecomeDriver: React.FC = () => {
                                                     key={v}
                                                     type="button"
                                                     onClick={() => setVehicleType(v)}
-                                                    className={`px-4 py-4 rounded-2xl border-2 text-sm font-bold transition-all ${vehicleType === v ? "bg-blue-50 border-blue-600 text-blue-700 shadow-lg shadow-blue-600/10" : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"}`}
+                                                    className={`px-4 py-4 rounded-2xl border-2 text-sm font-bold transition-all ${vehicleType === v ? "bg-[#00eb5b]/10 border-[#00ab42] text-[#00ab42] shadow-lg shadow-[#00eb5b]/15" : "bg-white border-slate-100 text-slate-500 hover:border-slate-200"}`}
                                                 >
                                                     {v}
                                                 </button>
@@ -198,7 +198,7 @@ const BecomeDriver: React.FC = () => {
                                             if (!nationalId || !licenseNumber) { setError("All fields are required."); return; }
                                             setError(""); setStep(2);
                                         }}
-                                        className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl shadow-blue-600/20 transition-all transform hover:-translate-y-1 active:translate-y-0 text-lg uppercase tracking-tight"
+                                        className="w-full py-5 bg-[#00eb5b] hover:bg-[#00ab42] hover:text-white text-slate-900 font-black rounded-2xl shadow-xl shadow-[#00eb5b]/20 transition-all transform hover:-translate-y-1 active:translate-y-0 text-lg uppercase tracking-tight"
                                     >
                                         Continue to Documents →
                                     </button>
@@ -216,7 +216,7 @@ const BecomeDriver: React.FC = () => {
                                 {error && <ErrorAlert message={error} />}
 
                                 <div
-                                    className={`relative flex flex-col items-center justify-center w-full min-h-[320px] border-4 border-dashed rounded-[2.5rem] transition-all overflow-hidden ${imagePreview ? "border-blue-600 bg-white shadow-2xl shadow-blue-900/10" : "border-slate-200 bg-slate-50 hover:border-blue-400 hover:bg-white"}`}
+                                    className={`relative flex flex-col items-center justify-center w-full min-h-[320px] border-4 border-dashed rounded-[2.5rem] transition-all overflow-hidden ${imagePreview ? "border-[#00ab42] bg-white shadow-2xl shadow-[#00eb5b]/15" : "border-slate-200 bg-slate-50 hover:border-[#00ab42]/70 hover:bg-white"}`}
                                 >
                                     <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer z-20" onChange={handleImageChange} />
 
@@ -229,7 +229,7 @@ const BecomeDriver: React.FC = () => {
                                         </div>
                                     ) : (
                                         <div className="text-center p-8 group">
-                                            <div className="w-20 h-20 bg-white rounded-3xl shadow-md flex items-center justify-center mx-auto mb-6 text-slate-300 group-hover:text-blue-500 transition-colors">
+                                            <div className="w-20 h-20 bg-white rounded-3xl shadow-md flex items-center justify-center mx-auto mb-6 text-slate-300 group-hover:text-[#00ab42] transition-colors">
                                                 <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                 </svg>
@@ -245,16 +245,16 @@ const BecomeDriver: React.FC = () => {
                                         type="button"
                                         onClick={handleUploadImage}
                                         disabled={imageUploading}
-                                        className="w-full mt-8 py-5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl shadow-xl shadow-emerald-600/20 transition-all disabled:opacity-50 uppercase tracking-tight"
+                                        className="w-full mt-8 py-5 bg-[#00eb5b] hover:bg-[#00ab42] hover:text-white text-slate-900 font-black rounded-2xl shadow-xl shadow-[#00eb5b]/20 transition-all disabled:opacity-50 uppercase tracking-tight"
                                     >
                                         {imageUploading ? "Processing Image..." : "Confirm & Upload Identity"}
                                     </button>
                                 )}
 
                                 {uploadedUrl && (
-                                    <div className="mt-8 flex items-center gap-3 px-6 py-5 bg-emerald-50 border border-emerald-100 rounded-2xl animate-in">
-                                        <div className="bg-emerald-500 rounded-full p-1"><CheckIcon size={16} /></div>
-                                        <span className="text-emerald-700 text-sm font-bold tracking-tight">Identity card verified and securely stored.</span>
+                                    <div className="mt-8 flex items-center gap-3 px-6 py-5 bg-[#00eb5b]/10 border border-[#00eb5b]/30 rounded-2xl animate-in">
+                                        <div className="bg-[#00eb5b] rounded-full p-1"><CheckIcon size={16} /></div>
+                                        <span className="text-[#00ab42] text-sm font-bold tracking-tight">Identity card verified and securely stored.</span>
                                     </div>
                                 )}
 
@@ -265,7 +265,7 @@ const BecomeDriver: React.FC = () => {
                                     <button
                                         type="button"
                                         onClick={() => { if (!uploadedUrl) { setError("Please upload your card first."); return; } setError(""); setStep(3); }}
-                                        className="flex-1 py-5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl shadow-blue-600/20 transition-all transform hover:-translate-y-1 active:translate-y-0 text-lg uppercase tracking-tight"
+                                        className="flex-1 py-5 bg-[#00eb5b] hover:bg-[#00ab42] hover:text-white text-slate-900 font-black rounded-2xl shadow-xl shadow-[#00eb5b]/20 transition-all transform hover:-translate-y-1 active:translate-y-0 text-lg uppercase tracking-tight"
                                     >
                                         Proceed to Final Review →
                                     </button>
@@ -318,7 +318,7 @@ const BecomeDriver: React.FC = () => {
 
 const StepIcon = ({ number, label, active, done }: { number: number; label: string; active: boolean; done: boolean }) => (
     <div className="flex flex-col items-center gap-2">
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black transition-all ${done ? "bg-emerald-500 text-white shadow-xl shadow-emerald-500/20" : active ? "bg-blue-600 text-white shadow-xl shadow-blue-600/20" : "bg-slate-200 text-slate-400"}`}>
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black transition-all ${done ? "bg-[#00eb5b] text-slate-900 shadow-xl shadow-[#00eb5b]/20" : active ? "bg-[#00eb5b] text-slate-900 shadow-xl shadow-[#00eb5b]/20" : "bg-slate-200 text-slate-400"}`}>
             {done ? <CheckIcon size={24} /> : number}
         </div>
         <span className={`text-[10px] font-black uppercase tracking-widest ${active ? "text-slate-900" : "text-slate-400"}`}>{label}</span>
@@ -336,7 +336,7 @@ const FieldWrapper = ({ label, helper, children }: { label: string; helper: stri
 );
 
 const ReviewItem = ({ label, value }: { label: string; value: string }) => (
-    <div className="flex flex-col gap-1 border-l-4 border-blue-600 pl-4">
+    <div className="flex flex-col gap-1 border-l-4 border-[#00ab42] pl-4">
         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
         <span className="text-lg font-bold text-slate-900 tracking-tight">{value}</span>
     </div>

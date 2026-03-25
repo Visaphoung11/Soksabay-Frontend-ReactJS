@@ -39,6 +39,38 @@ export interface TripApiResponse {
     timestamp: string;
 }
 
+const normalizeTrip = (input: any): Trip => {
+    const raw = input?.data ?? input;
+
+    const normalizedImages = (() => {
+        const candidates = raw?.images ?? raw?.imageUrls ?? raw?.tripImages ?? [];
+        if (!Array.isArray(candidates)) return [];
+        return candidates
+            .map((item: any) => {
+                if (typeof item === "string") return item;
+                return item?.url || item?.secure_url || item?.imageUrl || item?.image_url || "";
+            })
+            .filter(Boolean);
+    })();
+
+    return {
+        id: Number(raw?.id ?? 0),
+        title: raw?.title ?? "",
+        description: raw?.description ?? "",
+        origin: raw?.origin ?? "",
+        destination: raw?.destination ?? "",
+        pricePerSeat: Number(raw?.pricePerSeat ?? 0),
+        totalSeats: Number(raw?.totalSeats ?? 0),
+        availableSeats: Number(raw?.availableSeats ?? raw?.totalSeats ?? 0),
+        departureTime: raw?.departureTime ?? new Date().toISOString(),
+        status: raw?.status ?? "AVAILABLE",
+        images: normalizedImages,
+        driverName: raw?.driverName ?? raw?.driver?.fullName ?? raw?.driver?.name ?? "",
+        categoryName: raw?.categoryName ?? raw?.category?.name ?? "",
+        categoryId: Number(raw?.categoryId ?? raw?.category?.id ?? 0) || undefined,
+    } as Trip;
+};
+
 const extractApiErrorMessage = (error: any, fallback: string) => {
     return (
         error?.response?.data?.message ||
@@ -96,9 +128,14 @@ export const rejectDriverApplication = async (id: number): Promise<DriverDecisio
 
 export const createDriverTrip = async (payload: TripPayload): Promise<Trip> => {
     try {
-        const res = await api.post<TripApiResponse | Trip>("/driver/trips", payload);
+        const requestBody = {
+            ...payload,
+            images: payload.imageUrls,
+            tripImages: payload.imageUrls,
+        };
+        const res = await api.post<TripApiResponse | Trip>("/driver/trips", requestBody as any);
         const data = (res.data as TripApiResponse)?.data ?? (res.data as Trip);
-        return data;
+        return normalizeTrip(data);
     } catch (error: any) {
         throw new Error(extractApiErrorMessage(error, "Failed to create trip"));
     }
@@ -106,20 +143,27 @@ export const createDriverTrip = async (payload: TripPayload): Promise<Trip> => {
 
 export const getMyDriverTrips = async (): Promise<Trip[]> => {
     const res = await api.get<Trip[] | { data: Trip[] }>("/driver/trips/my");
-    return Array.isArray(res.data) ? res.data : res.data.data;
+    const rawList = Array.isArray(res.data) ? res.data : res.data.data;
+    return (rawList || []).map(normalizeTrip);
 };
 
 export const getDriverTripById = async (id: number): Promise<Trip> => {
     const res = await api.get<Trip[] | Trip | { data: Trip | Trip[] }>(`/driver/trips/${id}`);
     const raw: any = (res.data as any)?.data ?? res.data;
-    return Array.isArray(raw) ? raw[0] : raw;
+    const entity = Array.isArray(raw) ? raw[0] : raw;
+    return normalizeTrip(entity);
 };
 
 export const updateDriverTrip = async (id: number, payload: TripPayload): Promise<Trip> => {
     try {
-        const res = await api.put<TripApiResponse | Trip>(`/driver/trips/${id}`, payload);
+        const requestBody = {
+            ...payload,
+            images: payload.imageUrls,
+            tripImages: payload.imageUrls,
+        };
+        const res = await api.put<TripApiResponse | Trip>(`/driver/trips/${id}`, requestBody as any);
         const data = (res.data as TripApiResponse)?.data ?? (res.data as Trip);
-        return data;
+        return normalizeTrip(data);
     } catch (error: any) {
         throw new Error(extractApiErrorMessage(error, "Failed to update trip"));
     }
@@ -132,12 +176,14 @@ export const deleteDriverTrip = async (id: number): Promise<void> => {
 export const getPublicTripById = async (id: number): Promise<Trip> => {
     const res = await api.get<Trip[] | Trip | { data: Trip | Trip[] }>(`/public/trips/${id}`);
     const raw: any = (res.data as any)?.data ?? res.data;
-    return Array.isArray(raw) ? raw[0] : raw;
+    const entity = Array.isArray(raw) ? raw[0] : raw;
+    return normalizeTrip(entity);
 };
 
 export const searchPublicTrips = async (params: TripSearchParams = {}): Promise<Trip[]> => {
     const res = await api.get<Trip[] | { data: Trip[] }>("/public/trips/search", { params });
-    return Array.isArray(res.data) ? res.data : res.data.data;
+    const rawList = Array.isArray(res.data) ? res.data : res.data.data;
+    return (rawList || []).map(normalizeTrip);
 };
 
 export const getCategories = async (): Promise<Category[]> => {
