@@ -1,38 +1,57 @@
-import React, { useEffect, useMemo, useState, useRef, } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import type { Trip } from "../types/auth";
-import { createBooking, getPublicTripById, searchPublicTrips } from "../services/driverService";
+import {
+  createBooking,
+  getPublicTripById,
+  searchPublicTrips,
+} from "../services/driverService";
 import AppLayout from "../components/AppLayout";
 import { useAuth } from "../context/AuthContext";
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24">
-    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+    <path
+      fill="#4285F4"
+      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+    />
+    <path
+      fill="#34A853"
+      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+    />
+    <path
+      fill="#EA4335"
+      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+    />
   </svg>
 );
 
 const heroSlides = [
-    {
-      image: "https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=2000&q=80",
-      alt: "Angkor Wat Sunrise",
-    },
-    {
-      image: "https://vigoti.org/wp-content/uploads/2013/09/tonle-sap-lake-1.jpg",
-      alt: "Tonle Sap Lake",
-    },
-    {
-      image: "https://www.indochinavoyages.com/wp-content/uploads/2024/10/cambodia-beaches.jpg",
-      alt: "Cambodia Beach",
-    },
-    {
-      image: "https://d1bv4heaa2n05k.cloudfront.net/user-images/1449230138515/1shutterstock-223834342_main_1449230145224.jpeg",
-      alt: "Cambodia Temple Ruins",
-    },
-  ];
+  {
+    image:
+      "https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=2000&q=80",
+    alt: "Angkor Wat Sunrise",
+  },
+  {
+    image: "https://vigoti.org/wp-content/uploads/2013/09/tonle-sap-lake-1.jpg",
+    alt: "Tonle Sap Lake",
+  },
+  {
+    image:
+      "https://www.indochinavoyages.com/wp-content/uploads/2024/10/cambodia-beaches.jpg",
+    alt: "Cambodia Beach",
+  },
+  {
+    image:
+      "https://d1bv4heaa2n05k.cloudfront.net/user-images/1449230138515/1shutterstock-223834342_main_1449230145224.jpeg",
+    alt: "Cambodia Temple Ruins",
+  },
+];
 
 const staticDestinations = [
   {
@@ -59,7 +78,8 @@ const staticDestinations = [
 ];
 
 const PublicTrips: React.FC = () => {
-  const { isAuthenticated, loginWithEmail, register, loginWithGoogle } = useAuth();
+  const { isAuthenticated, loginWithEmail, register, loginWithGoogle } =
+    useAuth();
   const navigate = useNavigate();
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
@@ -130,7 +150,10 @@ const PublicTrips: React.FC = () => {
     };
   }, [heroSlides.length]);
 
-  const hasFilters = useMemo(() => !!origin || !!destination || !!date, [origin, destination, date]);
+  const hasFilters = useMemo(
+    () => !!origin || !!destination || !!date,
+    [origin, destination, date]
+  );
 
   const fetchTrips = async () => {
     setLoading(true);
@@ -189,7 +212,11 @@ const PublicTrips: React.FC = () => {
       setSelectedTrip(null);
       await fetchTrips();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || err?.message || "Failed to create booking");
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to create booking"
+      );
     } finally {
       setBookingLoading(false);
     }
@@ -241,11 +268,10 @@ const PublicTrips: React.FC = () => {
         setAuthTab("login");
         setShowAuthModal(true);
       }}
+      fullWidthChildren={true}
     >
       <div className="max-w-7xl mx-auto">
-
-
-                {/* Hero Auto Carousel */}
+        {/* Hero Auto Carousel */}
         <section className="mb-8 rounded-3xl overflow-hidden bg-white border border-slate-200">
           <div className="relative h-[320px] md:h-[420px] group" ref={heroRef}>
             {/* Slides Container */}
@@ -255,7 +281,10 @@ const PublicTrips: React.FC = () => {
               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
             >
               {heroSlides.map((slide, index) => (
-                <div key={index} className="min-w-full h-full relative flex-shrink-0">
+                <div
+                  key={index}
+                  className="min-w-full h-full relative flex-shrink-0"
+                >
                   <img
                     src={slide.image}
                     alt={slide.alt}
@@ -275,7 +304,8 @@ const PublicTrips: React.FC = () => {
                 Discover Cambodia like you imagine and see style adventures
               </h1>
               <p className="text-white/85 mt-3 text-sm md:text-base max-w-2xl">
-                Compare routes, explore destination highlights, and book trusted drivers for your journey across Cambodia.
+                Compare routes, explore destination highlights, and book trusted
+                drivers for your journey across Cambodia.
               </p>
             </div>
 
@@ -286,8 +316,8 @@ const PublicTrips: React.FC = () => {
                   key={index}
                   onClick={() => goToSlide(index)}
                   className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                    currentSlide === index 
-                      ? "bg-white scale-110" 
+                    currentSlide === index
+                      ? "bg-white scale-110"
                       : "bg-white/50 hover:bg-white"
                   }`}
                 />
@@ -298,16 +328,32 @@ const PublicTrips: React.FC = () => {
 
         <section className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-black text-slate-900">Top Cambodia Destinations</h2>
-            <p className="text-sm text-slate-500">Cambodia is a country in Southeast Asia with a rich history and diverse culture.</p>
+            <h2 className="text-2xl font-black text-slate-900">
+              Top Cambodia Destinations
+            </h2>
+            <p className="text-sm text-slate-500">
+              Cambodia is a country in Southeast Asia with a rich history and
+              diverse culture.
+            </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {staticDestinations.map((d) => (
-              <div key={d.name} className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all">
-                <img src={d.image} alt={d.name} className="w-full h-48 object-cover" />
+              <div
+                key={d.name}
+                className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl transition-all"
+              >
+                <img
+                  src={d.image}
+                  alt={d.name}
+                  className="w-full h-48 object-cover"
+                />
                 <div className="p-4">
-                  <p className="text-[11px] font-black uppercase text-[#00ab42] tracking-widest">{d.place}</p>
-                  <h3 className="text-lg font-black text-slate-900 mt-1">{d.name}</h3>
+                  <p className="text-[11px] font-black uppercase text-[#00ab42] tracking-widest">
+                    {d.place}
+                  </p>
+                  <h3 className="text-lg font-black text-slate-900 mt-1">
+                    {d.name}
+                  </h3>
                   <p className="text-sm text-slate-600 mt-2">{d.desc}</p>
                 </div>
               </div>
@@ -316,7 +362,9 @@ const PublicTrips: React.FC = () => {
         </section>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-4 md:p-6 mb-6">
-          <h2 className="text-xl font-black text-slate-900 mb-4">Find your trip</h2>
+          <h2 className="text-xl font-black text-slate-900 mb-4">
+            Find your trip
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <input
               value={origin}
@@ -357,15 +405,27 @@ const PublicTrips: React.FC = () => {
               </button>
             </div>
           </div>
-          {hasFilters && <p className="text-xs text-slate-500 mt-3">Filtering active</p>}
+          {hasFilters && (
+            <p className="text-xs text-slate-500 mt-3">Filtering active</p>
+          )}
         </div>
 
-        {error && <div className="mb-4 bg-red-50 text-red-600 border border-red-200 rounded-xl px-4 py-3 text-sm">{error}</div>}
+        {error && (
+          <div className="mb-4 bg-red-50 text-red-600 border border-red-200 rounded-xl px-4 py-3 text-sm">
+            {error}
+          </div>
+        )}
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" aria-label="Loading trips">
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+            aria-label="Loading trips"
+          >
             {Array.from({ length: 6 }).map((_, idx) => (
-              <div key={idx} className="bg-white rounded-3xl border border-slate-200 overflow-hidden animate-pulse">
+              <div
+                key={idx}
+                className="bg-white rounded-3xl border border-slate-200 overflow-hidden animate-pulse"
+              >
                 <div className="w-full h-52 bg-slate-200" />
                 <div className="p-4 space-y-3">
                   <div className="h-4 bg-slate-200 rounded w-3/4" />
@@ -381,7 +441,9 @@ const PublicTrips: React.FC = () => {
             ))}
           </div>
         ) : trips.length === 0 ? (
-          <div className="py-20 text-center text-slate-500">No trips found.</div>
+          <div className="py-20 text-center text-slate-500">
+            No trips found.
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {trips.map((trip) => (
@@ -392,7 +454,10 @@ const PublicTrips: React.FC = () => {
               >
                 <div className="relative">
                   <img
-                    src={trip.images?.[0] || "https://placehold.co/800x500?text=Trip+Image"}
+                    src={
+                      trip.images?.[0] ||
+                      "https://placehold.co/800x500?text=Trip+Image"
+                    }
                     alt={trip.title}
                     className="w-full h-52 object-cover"
                   />
@@ -409,8 +474,12 @@ const PublicTrips: React.FC = () => {
 
                   <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-3">
                     <div className="min-w-0">
-                      <h3 className="font-black text-white text-lg leading-tight line-clamp-1">{trip.title}</h3>
-                      <p className="text-white/80 text-xs line-clamp-1">{trip.origin} → {trip.destination}</p>
+                      <h3 className="font-black text-white text-lg leading-tight line-clamp-1">
+                        {trip.title}
+                      </h3>
+                      <p className="text-white/80 text-xs line-clamp-1">
+                        {trip.origin} → {trip.destination}
+                      </p>
                     </div>
                     <span className="shrink-0 px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-[#00eb5b] text-slate-900">
                       {trip.categoryName || "Trip"}
@@ -420,15 +489,22 @@ const PublicTrips: React.FC = () => {
 
                 <div className="p-4 space-y-3">
                   <p className="text-xs text-slate-600 line-clamp-2 min-h-[32px]">
-                    {trip.description || "No description provided for this trip."}
+                    {trip.description ||
+                      "No description provided for this trip."}
                   </p>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-[#00ab42] font-black text-base">${trip.pricePerSeat}/seat</span>
-                    <span className="text-slate-500 font-semibold">{trip.availableSeats}/{trip.totalSeats} seats</span>
+                    <span className="text-[#00ab42] font-black text-base">
+                      ${trip.pricePerSeat}/seat
+                    </span>
+                    <span className="text-slate-500 font-semibold">
+                      {trip.availableSeats}/{trip.totalSeats} seats
+                    </span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>Driver: {trip.driverName || "Unknown"}</span>
-                    <span className="font-semibold">{new Date(trip.departureTime).toLocaleDateString()}</span>
+                    <span className="font-semibold">
+                      {new Date(trip.departureTime).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
               </button>
@@ -436,18 +512,86 @@ const PublicTrips: React.FC = () => {
           </div>
         )}
       </div>
+      <section>
+        {/* FULL WIDTH + WIDE Travelers' Choice Banner - Edge to Edge */}
+        <div className="relative bg-[#003d1f] text-white overflow-hidden py-16 md:py-20 mt-12 w-full">
+          <div className="max-w-7xl mx-auto px-6 md:px-10 relative z-10">
+            <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+              {/* Left Content */}
+              <div className="lg:w-5/12 space-y-6 text-center lg:text-left">
+                {/* 2026 Badge */}
+                <div className="inline-flex items-center gap-3">
+                  <div className="w-14 h-14 bg-[#ffd700] rounded-2xl flex items-center justify-center shadow-lg">
+                    <span className="text-3xl">🏆</span>
+                  </div>
+                  <div className="text-[#ffd700] font-bold text-2xl tracking-widest">
+                    2026
+                  </div>
+                </div>
+
+                <h2 className="text-4xl md:text-5xl font-black leading-tight tracking-tight">
+                  Travelers' Choice Awards
+                  <br />
+                  Best of the Best
+                </h2>
+
+                <p className="text-lg md:text-xl text-white/90 max-w-md mx-auto lg:mx-0">
+                  Among our top 1% of places, stays, eats, and experiences —
+                  decided by you.
+                </p>
+
+                <a
+                  href="/travelers-choice"
+                  className="inline-block mt-6 px-10 py-4 bg-white text-[#003d1f] font-semibold text-lg rounded-full hover:bg-gray-100 active:scale-95 transition-all shadow-xl"
+                >
+                  See the winners
+                </a>
+              </div>
+
+              {/* Right Visual */}
+              <div className="lg:w-7/12 relative flex justify-center lg:justify-end">
+                {/* Yellow Circle */}
+                <div className="absolute -top-10 right-6 md:right-12 w-64 h-64 md:w-80 md:h-80 bg-[#ffd700] rounded-full z-0"></div>
+
+                {/* Green Circle */}
+                <div className="absolute bottom-10 -right-4 md:bottom-14 md:-right-8 w-52 h-52 md:w-64 md:h-64 bg-[#00eb5b] rounded-full z-0"></div>
+
+                {/* Circular Photo */}
+                <div className="relative z-10 w-full max-w-[400px] lg:max-w-[480px] aspect-square rounded-full overflow-hidden border-8 border-white shadow-2xl">
+                  <img
+                    src="https://blog.windstarcruises.com/content/uploads/2019/11/bayon-temple.jpg"
+                    alt="Happy travelers in Cambodia"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom accent bar */}
+          <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-r from-[#00ab42] via-[#00c74d] to-[#00eb5b]"></div>
+        </div>
+      </section>
 
       {selectedTrip && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="max-w-4xl mx-auto bg-white rounded-2xl overflow-hidden">
             <div className="flex justify-between items-center p-4 border-b border-slate-200">
               <h2 className="text-xl font-bold">{selectedTrip.title}</h2>
-              <button onClick={() => setSelectedTrip(null)} className="text-slate-500 hover:text-slate-900">✕</button>
+              <button
+                onClick={() => setSelectedTrip(null)}
+                className="text-slate-500 hover:text-slate-900"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="relative">
               <img
-                src={selectedTrip.images?.[activeImage] || "https://placehold.co/1200x700?text=Trip+Image"}
+                src={
+                  selectedTrip.images?.[activeImage] ||
+                  "https://placehold.co/1200x700?text=Trip+Image"
+                }
                 alt={selectedTrip.title}
                 className="w-full h-72 md:h-96 object-cover"
               />
@@ -457,30 +601,60 @@ const PublicTrips: React.FC = () => {
             </div>
             <div className="p-4 flex gap-2 overflow-x-auto border-b border-slate-100">
               {(selectedTrip.images || []).map((img, idx) => (
-                <button key={`${img}-${idx}`} onClick={() => setActiveImage(idx)}>
+                <button
+                  key={`${img}-${idx}`}
+                  onClick={() => setActiveImage(idx)}
+                >
                   <img
                     src={img}
                     alt={`Trip ${idx + 1}`}
-                    className={`w-20 h-20 rounded-lg object-cover border-2 ${activeImage === idx ? "border-[#00ab42]" : "border-transparent"}`}
+                    className={`w-20 h-20 rounded-lg object-cover border-2 ${
+                      activeImage === idx
+                        ? "border-[#00ab42]"
+                        : "border-transparent"
+                    }`}
                   />
                 </button>
               ))}
             </div>
 
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <p><span className="font-semibold">Route:</span> {selectedTrip.origin} → {selectedTrip.destination}</p>
-              <p><span className="font-semibold">Driver:</span> {selectedTrip.driverName}</p>
-              <p><span className="font-semibold">Category:</span> {selectedTrip.categoryName}</p>
-              <p><span className="font-semibold">Departure:</span> {new Date(selectedTrip.departureTime).toLocaleString()}</p>
-              <p><span className="font-semibold">Price:</span> ${selectedTrip.pricePerSeat}/seat</p>
-              <p><span className="font-semibold">Seats:</span> {selectedTrip.availableSeats}/{selectedTrip.totalSeats}</p>
-              <p className="md:col-span-2"><span className="font-semibold">Description:</span> {selectedTrip.description}</p>
+              <p>
+                <span className="font-semibold">Route:</span>{" "}
+                {selectedTrip.origin} → {selectedTrip.destination}
+              </p>
+              <p>
+                <span className="font-semibold">Driver:</span>{" "}
+                {selectedTrip.driverName}
+              </p>
+              <p>
+                <span className="font-semibold">Category:</span>{" "}
+                {selectedTrip.categoryName}
+              </p>
+              <p>
+                <span className="font-semibold">Departure:</span>{" "}
+                {new Date(selectedTrip.departureTime).toLocaleString()}
+              </p>
+              <p>
+                <span className="font-semibold">Price:</span> $
+                {selectedTrip.pricePerSeat}/seat
+              </p>
+              <p>
+                <span className="font-semibold">Seats:</span>{" "}
+                {selectedTrip.availableSeats}/{selectedTrip.totalSeats}
+              </p>
+              <p className="md:col-span-2">
+                <span className="font-semibold">Description:</span>{" "}
+                {selectedTrip.description}
+              </p>
             </div>
 
             <div className="px-6 pb-6">
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-end gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-600 mb-1 block">Seats to book</label>
+                  <label className="text-xs font-semibold text-slate-600 mb-1 block">
+                    Seats to book
+                  </label>
                   <input
                     type="number"
                     aria-label="Seats to book"
@@ -493,10 +667,16 @@ const PublicTrips: React.FC = () => {
                 </div>
                 <button
                   onClick={handleCreateBooking}
-                  disabled={bookingLoading || Number(selectedTrip.availableSeats) <= 0}
+                  disabled={
+                    bookingLoading || Number(selectedTrip.availableSeats) <= 0
+                  }
                   className="px-5 py-2.5 rounded-xl bg-[#00eb5b] text-slate-900 font-semibold hover:bg-[#00ab42] hover:text-white disabled:opacity-50 transition-colors"
                 >
-                  {bookingLoading ? "Booking..." : Number(selectedTrip.availableSeats) <= 0 ? "No Seats Available" : "Book This Trip"}
+                  {bookingLoading
+                    ? "Booking..."
+                    : Number(selectedTrip.availableSeats) <= 0
+                    ? "No Seats Available"
+                    : "Book This Trip"}
                 </button>
               </div>
             </div>
@@ -509,10 +689,19 @@ const PublicTrips: React.FC = () => {
           <div className="w-full max-w-md bg-white border border-slate-200 rounded-[2rem] shadow-2xl shadow-emerald-900/20 p-7 transform transition-all duration-300 scale-100">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Welcome to Soksabay Go</h3>
-                <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">Login or register to start your Cambodia trip</p>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                  Welcome to Soksabay Go
+                </h3>
+                <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">
+                  Login or register to start your Cambodia trip
+                </p>
               </div>
-              <button onClick={() => setShowAuthModal(false)} className="text-slate-500 hover:text-slate-900">✕</button>
+              <button
+                onClick={() => setShowAuthModal(false)}
+                className="text-slate-500 hover:text-slate-900"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="flex bg-slate-100 p-1 rounded-2xl mb-4">
@@ -521,7 +710,11 @@ const PublicTrips: React.FC = () => {
                   setAuthTab("login");
                   setAuthError("");
                 }}
-                className={`flex-1 py-2 text-sm rounded-xl font-bold ${authTab === "login" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500"}`}
+                className={`flex-1 py-2 text-sm rounded-xl font-bold ${
+                  authTab === "login"
+                    ? "bg-white text-emerald-700 shadow-sm"
+                    : "text-slate-500"
+                }`}
               >
                 Sign In
               </button>
@@ -530,13 +723,21 @@ const PublicTrips: React.FC = () => {
                   setAuthTab("register");
                   setAuthError("");
                 }}
-                className={`flex-1 py-2 text-sm rounded-xl font-bold ${authTab === "register" ? "bg-white text-emerald-700 shadow-sm" : "text-slate-500"}`}
+                className={`flex-1 py-2 text-sm rounded-xl font-bold ${
+                  authTab === "register"
+                    ? "bg-white text-emerald-700 shadow-sm"
+                    : "text-slate-500"
+                }`}
               >
                 Register
               </button>
             </div>
 
-            {authError && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-3">{authError}</p>}
+            {authError && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-3">
+                {authError}
+              </p>
+            )}
 
             {authTab === "login" ? (
               <form onSubmit={handleAuthLogin} className="space-y-3">
@@ -556,7 +757,10 @@ const PublicTrips: React.FC = () => {
                   onChange={(e) => setLoginPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200"
                 />
-                <button disabled={authLoading} className="w-full py-3.5 rounded-2xl bg-emerald-700 text-white font-bold hover:bg-emerald-800 shadow-lg shadow-emerald-700/20 disabled:opacity-50 transition-all">
+                <button
+                  disabled={authLoading}
+                  className="w-full py-3.5 rounded-2xl bg-emerald-700 text-white font-bold hover:bg-emerald-800 shadow-lg shadow-emerald-700/20 disabled:opacity-50 transition-all"
+                >
                   {authLoading ? "Signing in..." : "Sign In"}
                 </button>
               </form>
@@ -611,15 +815,22 @@ const PublicTrips: React.FC = () => {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200"
                 />
-                <button disabled={authLoading} className="w-full py-3.5 rounded-2xl bg-emerald-700 text-white font-bold hover:bg-emerald-800 shadow-lg shadow-emerald-700/20 disabled:opacity-50 transition-all">
+                <button
+                  disabled={authLoading}
+                  className="w-full py-3.5 rounded-2xl bg-emerald-700 text-white font-bold hover:bg-emerald-800 shadow-lg shadow-emerald-700/20 disabled:opacity-50 transition-all"
+                >
                   {authLoading ? "Creating account..." : "Create Account"}
                 </button>
               </form>
             )}
 
             <div className="relative my-4 text-center">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-              <span className="relative bg-white px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">or continue with</span>
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-100"></div>
+              </div>
+              <span className="relative bg-white px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                or continue with
+              </span>
             </div>
 
             <button
