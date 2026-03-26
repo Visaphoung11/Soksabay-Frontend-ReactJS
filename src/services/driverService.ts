@@ -126,6 +126,29 @@ export const rejectDriverApplication = async (id: number): Promise<DriverDecisio
     return res.data;
 };
 
+export const reapplyAsDriver = async (id: number, payload: ApplyDriverPayload): Promise<ApplyDriverResponse> => {
+    console.log('🔄 Calling reapply endpoint:', `PUT /driver-applications/${id}/reapply`, payload);
+    const res = await api.put<ApplyDriverResponse>(`/driver-applications/${id}/reapply`, payload);
+    console.log('✅ Reapply response:', res.data);
+    return res.data;
+};
+
+export const getMyDriverApplication = async (): Promise<DriverApplication | null> => {
+    try {
+        console.log('🔍 Checking for existing application...');
+        const res = await api.get<DriverApplication | { data: DriverApplication }>("/driver-applications/my");
+        const application = (res.data as any)?.data ?? (res.data as DriverApplication) ?? null;
+        console.log('📋 Application found:', application);
+        return application;
+    } catch (error: any) {
+        console.log('❌ Error checking application:', error?.response?.status, error?.response?.data);
+        if (error?.response?.status === 404) {
+            return null; // No application found
+        }
+        throw error;
+    }
+};
+
 export const createDriverTrip = async (payload: TripPayload): Promise<Trip> => {
     try {
         const requestBody = {

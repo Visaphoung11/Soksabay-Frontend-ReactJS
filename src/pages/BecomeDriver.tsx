@@ -1,7 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { uploadImage, applyAsDriver } from "../services/driverService";
+import { uploadImage, applyAsDriver, reapplyAsDriver, getMyDriverApplication } from "../services/driverService";
+import type { DriverApplication } from "../types/auth";
+
+// Update the DriverApplication type to include rejectionReason
+interface ExtendedDriverApplication extends DriverApplication {
+    rejectionReason?: string | null;
+}
 
 const VEHICLE_TYPES = [
     "Sedan / 4-Seater",
@@ -22,6 +28,9 @@ const BecomeDriver: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
+    const [existingApplication, setExistingApplication] = useState<ExtendedDriverApplication | null>(null);
+    const [isReapplication, setIsReapplication] = useState(false);
+    const [checkingApplication, setCheckingApplication] = useState(true);
 
     const [nationalId, setNationalId] = useState("");
     const [licenseNumber, setLicenseNumber] = useState("");
@@ -32,6 +41,38 @@ const BecomeDriver: React.FC = () => {
     const [uploadedUrl, setUploadedUrl] = useState("");
     const [uploadedPublicId, setUploadedPublicId] = useState("");
     const [imageUploading, setImageUploading] = useState(false);
+
+    // Check for existing application on component mount
+    useEffect(() => {
+        const checkExistingApplication = async () => {
+            try {
+                const application = await getMyDriverApplication();
+                if (application) {
+                    setExistingApplication(application);
+                    if (application.status === "REJECTED") {
+                        setIsReapplication(true);
+                        // Pre-fill form with existing data
+                        setNationalId(application.nationalId);
+                        setLicenseNumber(application.licenseNumber);
+                        setVehicleType(application.vehicleType);
+                        setUploadedUrl(application.idCardImageUrl);
+                        setImagePreview(application.idCardImageUrl);
+                    } else if (application.status === "PENDING") {
+                        // Show pending status
+                        setCheckingApplication(false);
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.log('Application check failed, proceeding with new application flow');
+                // Continue with new application flow even if check fails
+            } finally {
+                setCheckingApplication(false);
+            }
+        };
+
+        checkExistingApplication();
+    }, []);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -66,13 +107,19 @@ const BecomeDriver: React.FC = () => {
         setLoading(true);
         setError("");
         try {
-            await applyAsDriver({
+            const payload = {
                 nationalId,
                 licenseNumber,
                 vehicleType,
                 idCardImageUrl: uploadedUrl,
                 idCardPublicId: uploadedPublicId,
-            });
+            };
+
+            if (isReapplication && existingApplication) {
+                await reapplyAsDriver(existingApplication.id, payload);
+            } else {
+                await applyAsDriver(payload);
+            }
             setSuccess(true);
         } catch (err: any) {
             setError(err?.response?.data?.message || "Application failed.");
@@ -80,6 +127,50 @@ const BecomeDriver: React.FC = () => {
             setLoading(false);
         }
     };
+
+    if (checkingApplication) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+                <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-[#00eb5b] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-slate-500 font-medium">Checking application status...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (existingApplication && existingApplication.status === "PENDING") {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+                <div className="bg-white rounded-[3rem] p-12 max-w-lg w-full text-center shadow-2xl shadow-[#00eb5b]/15 border border-white">
+                    <div className="w-24 h-24 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-8">
+                        <svg className="w-12 h-12 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-3xl font-black text-slate-900 mb-4 font-outfit">Application Under Review</h2>
+                    <p className="text-slate-500 mb-10 leading-relaxed font-medium">
+                        Your driver application is currently being reviewed by our team. We'll notify you as soon as there's an update.
+                    </p>
+                    <div className="bg-amber-50 rounded-2xl p-6 mb-10 border border-amber-200">
+                        <p className="text-amber-700 text-sm font-bold flex items-center justify-center gap-2 uppercase tracking-widest">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                            </svg>
+                            Status: Pending Review
+                        </p>
+                        <p className="text-amber-600 text-xs mt-2">Submitted on {new Date(existingApplication.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    <button
+                        onClick={() => navigate("/dashboard")}
+                        className="w-full py-5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl shadow-xl transition-all transform hover:-translate-y-1 active:translate-y-0"
+                    >
+                        Return to Dashboard
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     if (success) {
         return (
@@ -90,9 +181,14 @@ const BecomeDriver: React.FC = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <h2 className="text-3xl font-black text-slate-900 mb-4 font-outfit">Application Sent!</h2>
+                    <h2 className="text-3xl font-black text-slate-900 mb-4 font-outfit">
+                        {isReapplication ? "Application Re-submitted!" : "Application Sent!"}
+                    </h2>
                     <p className="text-slate-500 mb-10 leading-relaxed font-medium">
-                        Your application is now being reviewed by our team. We'll notify you as soon as you're cleared for the road.
+                        {isReapplication 
+                            ? "Your application has been re-submitted for review. We'll evaluate your updated information and notify you soon."
+                            : "Your application is now being reviewed by our team. We'll notify you as soon as you're cleared for the road."
+                        }
                     </p>
                     <div className="bg-[#00eb5b]/10 rounded-2xl p-6 mb-10 border border-[#00eb5b]/30">
                         <p className="text-[#00ab42] text-sm font-bold flex items-center justify-center gap-2 uppercase tracking-widest">
@@ -127,11 +223,35 @@ const BecomeDriver: React.FC = () => {
                     BACK TO HUB
                 </button>
                 <div className="flex-1 text-center pr-12">
-                    <h1 className="text-xl font-black text-slate-900 font-outfit tracking-tighter">Become a Soksabay Driver</h1>
+                    <h1 className="text-xl font-black text-slate-900 font-outfit tracking-tighter">
+                        {isReapplication ? "Reapply as Soksabay Driver" : "Become a Soksabay Driver"}
+                    </h1>
                 </div>
             </header>
 
             <div className="max-w-3xl mx-auto px-6 pt-12 pb-20">
+                {/* Rejection Notice */}
+                {isReapplication && existingApplication?.rejectionReason && (
+                    <div className="mb-8 p-6 bg-red-50 border-2 border-red-200 rounded-3xl">
+                        <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-1">
+                                <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-red-800 font-black text-lg mb-2">Previous Application Rejected</h3>
+                                <p className="text-red-600 text-sm font-medium mb-3">
+                                    Reason: {existingApplication.rejectionReason}
+                                </p>
+                                <p className="text-red-500 text-xs">
+                                    Please review the feedback below and update your application accordingly.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Visual Step Indicator */}
                 <div className="flex items-center justify-between mb-12 px-4">
                     <StepIcon number={1} label="Identity" active={step >= 1} done={step > 1} />
