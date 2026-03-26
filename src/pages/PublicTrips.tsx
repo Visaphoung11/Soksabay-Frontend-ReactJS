@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef, } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import type { Trip } from "../types/auth";
@@ -14,6 +14,25 @@ const GoogleIcon = () => (
     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
   </svg>
 );
+
+const heroSlides = [
+    {
+      image: "https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=2000&q=80",
+      alt: "Angkor Wat Sunrise",
+    },
+    {
+      image: "https://vigoti.org/wp-content/uploads/2013/09/tonle-sap-lake-1.jpg",
+      alt: "Tonle Sap Lake",
+    },
+    {
+      image: "https://www.indochinavoyages.com/wp-content/uploads/2024/10/cambodia-beaches.jpg",
+      alt: "Cambodia Beach",
+    },
+    {
+      image: "https://d1bv4heaa2n05k.cloudfront.net/user-images/1449230138515/1shutterstock-223834342_main_1449230145224.jpeg",
+      alt: "Cambodia Temple Ruins",
+    },
+  ];
 
 const staticDestinations = [
   {
@@ -64,6 +83,52 @@ const PublicTrips: React.FC = () => {
   const [gender, setGender] = useState("Male");
   const [regPassword, setRegPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Hero Carousel States
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Carousel Functions
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index);
+  };
+
+  // Auto Slide Effect
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5000); // Change every 5 seconds
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [heroSlides.length]);
+
+  // Pause on hover
+  useEffect(() => {
+    const container = heroRef.current;
+    if (!container) return;
+
+    const pause = () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+
+    const resume = () => {
+      intervalRef.current = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+      }, 5000);
+    };
+
+    container.addEventListener("mouseenter", pause);
+    container.addEventListener("mouseleave", resume);
+
+    return () => {
+      container.removeEventListener("mouseenter", pause);
+      container.removeEventListener("mouseleave", resume);
+    };
+  }, [heroSlides.length]);
 
   const hasFilters = useMemo(() => !!origin || !!destination || !!date, [origin, destination, date]);
 
@@ -179,20 +244,54 @@ const PublicTrips: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto">
 
+
+                {/* Hero Auto Carousel */}
         <section className="mb-8 rounded-3xl overflow-hidden bg-white border border-slate-200">
-          <div className="relative h-[320px] md:h-[420px]">
-            <img
-              src="https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=2000&q=80"
-              alt="Cambodia tour destinations"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-black/10" />
-            <div className="absolute inset-0 p-6 md:p-10 flex flex-col justify-end">
-              <p className="text-[#00eb5b] text-xs md:text-sm font-black uppercase tracking-[0.2em] mb-2">BOOK TOURS IN CAMBODIA</p>
-              <h1 className="text-white text-3xl md:text-5xl font-black max-w-3xl leading-tight">Discover Cambodia like you imagine and see style adventures</h1>
+          <div className="relative h-[320px] md:h-[420px] group" ref={heroRef}>
+            {/* Slides Container */}
+            <div
+              ref={carouselRef}
+              className="flex h-full transition-transform duration-700 ease-in-out"
+              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            >
+              {heroSlides.map((slide, index) => (
+                <div key={index} className="min-w-full h-full relative flex-shrink-0">
+                  <img
+                    src={slide.image}
+                    alt={slide.alt}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/10" />
+                </div>
+              ))}
+            </div>
+
+            {/* Content Overlay (same for all slides) */}
+            <div className="absolute inset-0 p-6 md:p-10 flex flex-col justify-end pointer-events-none">
+              <p className="text-[#00eb5b] text-xs md:text-sm font-black uppercase tracking-[0.2em] mb-2">
+                BOOK TOURS IN CAMBODIA
+              </p>
+              <h1 className="text-white text-3xl md:text-5xl font-black max-w-3xl leading-tight">
+                Discover Cambodia like you imagine and see style adventures
+              </h1>
               <p className="text-white/85 mt-3 text-sm md:text-base max-w-2xl">
                 Compare routes, explore destination highlights, and book trusted drivers for your journey across Cambodia.
               </p>
+            </div>
+
+            {/* Navigation Dots */}
+            <div className="absolute bottom-6 right-6 flex gap-3 z-10">
+              {heroSlides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    currentSlide === index 
+                      ? "bg-white scale-110" 
+                      : "bg-white/50 hover:bg-white"
+                  }`}
+                />
+              ))}
             </div>
           </div>
         </section>
@@ -200,7 +299,7 @@ const PublicTrips: React.FC = () => {
         <section className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-black text-slate-900">Top Cambodia Destinations</h2>
-            <p className="text-sm text-slate-500">Static highlights inspired by Tripadvisor</p>
+            <p className="text-sm text-slate-500">Cambodia is a country in Southeast Asia with a rich history and diverse culture.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {staticDestinations.map((d) => (
