@@ -1,24 +1,26 @@
-@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
 
+@import "tailwindcss";
 @layer base {
   :root {
     --sub-brands-trip-brand: #00eb5b;
     --sub-brands-trip-brand-hover: #00ab42;
     --primary: #00eb5b;
     --primary-hover: #00ab42;
-    --secondary: #D4AF37;
-    --background: #FFFFFF;
-    --foreground: #0F172A;
-    --card: #FFFFFF;
-    --card-hover: #F8FAFC;
-    --muted: #64748B;
-    --accent: #F1F5F9;
+    --secondary: #d4af37;
+    --background: #ffffff;
+    --foreground: #0f172a;
+    --card: #ffffff;
+    --card-hover: #f8fafc;
+    --muted: #64748b;
+    --accent: #f1f5f9;
     --ring: rgba(0, 102, 255, 0.5);
   }
 
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
-    font-family: 'Outfit', 'Inter', sans-serif;
+    font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", Roboto, sans-serif;
   }
 }
 
@@ -46,7 +48,13 @@
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }
