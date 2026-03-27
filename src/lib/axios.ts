@@ -4,8 +4,26 @@ type AuthRequestConfig = {
     skipAuth?: boolean;
 };
 
+// Get base URL from environment variables or fallback to localhost
+const getBaseURL = () => {
+    // Check for environment variable first
+    const envURL = import.meta.env.VITE_API_BASE_URL;
+    if (envURL) {
+        return envURL;
+    }
+    
+    // Check for custom URL in localStorage (for easy switching)
+    const customURL = localStorage.getItem("API_BASE_URL");
+    if (customURL) {
+        return customURL;
+    }
+    
+    // Default to localhost
+    return "http://localhost:8080/api/v1";
+};
+
 export const api = axios.create({
-    baseURL: "http://localhost:8080/api/v1",
+    baseURL: getBaseURL(),
     withCredentials: true,
 });
 

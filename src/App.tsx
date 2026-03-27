@@ -9,6 +9,7 @@ import PublicTrips from "./pages/PublicTrips";
 import MyBookings from "./pages/MyBookings";
 import DriverBookingRequests from "./pages/DriverBookingRequests";
 import { ToastContainer } from "react-toastify";
+import URLSwitcher from "./components/URLSwitcher";
 
 const AppContent = () => {
   const { loading } = useAuth();
@@ -71,6 +72,7 @@ const App = () => (
   <AuthProvider>
     <AppContent />
     <ToastContainer position="top-right" autoClose={4000} newestOnTop />
+    <URLSwitcher />
   </AuthProvider>
 );
 
