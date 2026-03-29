@@ -8,6 +8,7 @@ import DriverTrips from "./pages/DriverTrips";
 import PublicTrips from "./pages/PublicTrips";
 import MyBookings from "./pages/MyBookings";
 import DriverBookingRequests from "./pages/DriverBookingRequests";
+import Profile from "./pages/Profile";
 import { ToastContainer } from "react-toastify";
 import URLSwitcher from "./components/URLSwitcher";
 
@@ -59,6 +60,14 @@ const AppContent = () => {
           element={
             <ProtectedRoute>
               <DriverBookingRequests />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           }
         />

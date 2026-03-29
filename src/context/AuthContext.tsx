@@ -75,6 +75,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         fullName: raw.fullName ?? raw.name ?? raw.email?.split("@")[0] ?? "User",
         gender: raw.gender ?? "",
         contactNumber: raw.contactNumber ?? "",
+        profileImage:
+          raw.profileImage ??
+          raw.profile_image ??
+          raw.avatar ??
+          raw.avatarUrl ??
+          raw.imageUrl ??
+          raw.image_url ??
+          "",
         role: raw.role ?? raw.roles ?? ["USER"],
         accessToken: bearerToken ?? raw.accessToken ?? "",
         refreshToken: raw.refreshToken ?? "",
@@ -94,6 +102,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (u.refreshToken) localStorage.setItem(KEYS.REFRESH, u.refreshToken);
     localStorage.setItem(KEYS.HINT, "true");
     setUser(u);
+  };
+
+  /** Allows pages (e.g., Profile) to update the cached user after a PUT /users/me. */
+  const setUserAndPersist = (next: User) => {
+    persistUser(next);
   };
 
   const clearAuth = () => {
@@ -137,6 +150,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       fullName: raw.fullName ?? raw.name ?? email.split("@")[0] ?? "User",
       gender: raw.gender ?? "",
       contactNumber: raw.contactNumber ?? "",
+      profileImage:
+        (raw as any)?.profileImage ??
+        (raw as any)?.profile_image ??
+        (raw as any)?.avatar ??
+        (raw as any)?.avatarUrl ??
+        (raw as any)?.imageUrl ??
+        (raw as any)?.image_url ??
+        "",
       role: raw.role ?? raw.roles ?? ["USER"],
       accessToken: raw.accessToken ?? "",
       refreshToken: raw.refreshToken ?? "",
@@ -178,6 +199,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         refreshUser,
+        setUserAndPersist,
       }}
     >
       {children}

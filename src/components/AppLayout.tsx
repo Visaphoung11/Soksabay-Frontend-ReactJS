@@ -31,6 +31,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   const navItems = [
     { label: "Explore Trips", path: "/trips" },
     { label: "Dashboard", path: "/dashboard" },
+    { label: "Profile", path: "/profile" },
     { label: "My Bookings", path: "/bookings" },
     ...(isDriver ? [{ label: "Driver Trips", path: "/driver/trips" }] : []),
     ...(isDriver
@@ -121,14 +122,29 @@ const AppLayout: React.FC<AppLayoutProps> = ({
           ) : (
             <div className="hidden lg:flex items-center gap-3">
               <NotificationBell />
-              <div className="hidden md:block text-right">
-                <p className="text-sm font-bold text-slate-900 leading-tight">
-                  {user?.fullName || user?.email}
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  {user?.role?.[0] || "Member"}
-                </p>
-              </div>
+              <button
+                onClick={() => navigate("/profile")}
+                className="flex items-center gap-3 px-3 py-2 rounded-full hover:bg-slate-100 transition-colors"
+                title="View / edit profile"
+              >
+                <div className="w-9 h-9 rounded-2xl bg-[#00eb5b]/15 border border-[#00eb5b]/20 overflow-hidden flex items-center justify-center">
+                  {user?.profileImage ? (
+                    <img src={user.profileImage} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[#00ab42] font-black text-xs">
+                      {(user?.fullName || user?.email || "U").slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-bold text-slate-900 leading-tight">
+                    {user?.fullName || user?.email}
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    {user?.role?.[0] || "Member"}
+                  </p>
+                </div>
+              </button>
               <button
                 onClick={handleLogout}
                 className="px-3 py-2 rounded-full bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 text-sm font-semibold"
@@ -209,12 +225,32 @@ const AppLayout: React.FC<AppLayoutProps> = ({
             ))}
 
             <div className="mt-6 border-t pt-4">
-              <p className="text-sm font-bold text-slate-900 truncate">
-                {user?.fullName || user?.email}
-              </p>
-              <p className="text-xs text-slate-500 mb-3">
-                {user?.role?.[0] || "Member"}
-              </p>
+              <button
+                onClick={() => {
+                  navigate("/profile");
+                  setMobileOpen(false);
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-100 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-2xl bg-[#00eb5b]/15 border border-[#00eb5b]/20 overflow-hidden flex items-center justify-center">
+                  {user?.profileImage ? (
+                    <img src={user.profileImage} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[#00ab42] font-black text-sm">
+                      {(user?.fullName || user?.email || "U").slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="text-left min-w-0">
+                  <p className="text-sm font-bold text-slate-900 truncate">
+                    {user?.fullName || user?.email}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {user?.role?.[0] || "Member"}
+                  </p>
+                </div>
+              </button>
+
               <button
                 onClick={handleLogout}
                 className="w-full px-4 py-3 rounded-xl bg-red-50 text-red-600 font-semibold"

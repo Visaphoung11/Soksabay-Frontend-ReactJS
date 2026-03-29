@@ -5,6 +5,8 @@ export interface User {
   fullName: string;
   gender: string;
   contactNumber: string;
+  /** Optional URL for user's avatar/profile picture */
+  profileImage?: string;
   role: string[]; // e.g. ["USER"] or ["USER", "DRIVER"]
   accessToken: string;
   refreshToken: string;
@@ -26,6 +28,8 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   /** Re-fetches user profile from server and updates localStorage + state (for role refresh after approval). */
   refreshUser: () => Promise<void>;
+  /** Update local cached user (localStorage + context state) */
+  setUserAndPersist: (next: User) => void;
 }
 
 // ─── Driver Application ──────────────────────────────────────────────────────

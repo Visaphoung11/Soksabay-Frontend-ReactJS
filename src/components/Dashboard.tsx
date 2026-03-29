@@ -12,6 +12,35 @@ const Dashboard: React.FC = () => {
 
   return (
     <AppLayout title={`Good day, ${displayName}! 👋`} subtitle="Welcome back overview">
+      <section className="mb-10">
+        <div className="bg-white border border-slate-100 rounded-3xl p-6 flex flex-col md:flex-row gap-6 md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-[#00eb5b]/15 border border-[#00eb5b]/20 overflow-hidden flex items-center justify-center">
+              {user?.profileImage ? (
+                <img src={user.profileImage} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-[#00ab42] font-black">
+                  {(displayName || "U").slice(0, 1).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div>
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Account</p>
+              <p className="text-lg font-black text-slate-900 font-outfit leading-tight">
+                {user?.fullName || user?.email}
+              </p>
+              <p className="text-sm text-slate-500">Keep your info up to date for smoother bookings.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate("/profile")}
+            className="px-7 py-4 rounded-2xl bg-slate-900 text-white font-black hover:bg-slate-800 transition-colors uppercase tracking-wider text-xs"
+          >
+            Edit Profile
+          </button>
+        </div>
+      </section>
+
       <section className="mb-12">
         <div className="flex flex-wrap gap-2 mb-8">
           {user?.role?.map((r: string) => (
