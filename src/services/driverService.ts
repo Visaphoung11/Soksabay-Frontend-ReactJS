@@ -53,6 +53,30 @@ const normalizeTrip = (input: any): Trip => {
             .filter(Boolean);
     })();
 
+    const normalizedVehicleImages = (() => {
+        const candidates = raw?.vehicleImageUrls ?? raw?.vehicleImages ?? [];
+        if (!Array.isArray(candidates)) return [];
+        return candidates
+            .map((item: any) => {
+                if (typeof item === "string") return item;
+                return item?.url || item?.secure_url || item?.imageUrl || item?.image_url || "";
+            })
+            .filter(Boolean);
+    })();
+
+    const normalizedItinerary = (() => {
+        const list = raw?.itinerary ?? raw?.tripItinerary ?? [];
+        if (!Array.isArray(list)) return [];
+        return list
+            .map((s: any) => ({
+                id: s?.id !== undefined && s?.id !== null ? Number(s.id) : undefined,
+                name: s?.name ?? s?.title ?? "",
+                description: s?.description ?? "",
+                imageUrl: s?.imageUrl ?? s?.image_url ?? s?.thumbnailUrl ?? s?.thumbnail_url ?? "",
+            }))
+            .filter((s: any) => s.name || s.description || s.imageUrl);
+    })();
+
     return {
         id: Number(raw?.id ?? 0),
         title: raw?.title ?? "",
@@ -65,6 +89,22 @@ const normalizeTrip = (input: any): Trip => {
         departureTime: raw?.departureTime ?? new Date().toISOString(),
         status: raw?.status ?? "AVAILABLE",
         images: normalizedImages,
+        vehicleImageUrls: normalizedVehicleImages,
+        transportationType: raw?.transportationType ?? raw?.vehicleType ?? "",
+        vehicleCapacity: Number(raw?.vehicleCapacity ?? raw?.capacity ?? raw?.totalSeats ?? 0) || undefined,
+        isWholeVehicleBooking: Boolean(raw?.isWholeVehicleBooking ?? raw?.wholeVehicleBooking ?? false),
+        wholeVehiclePrice:
+            raw?.wholeVehiclePrice !== undefined && raw?.wholeVehiclePrice !== null
+                ? Number(raw?.wholeVehiclePrice)
+                : undefined,
+        scheduleDescription: raw?.scheduleDescription ?? "",
+        availabilitySchedule: raw?.availabilitySchedule ?? "",
+        hasTourGuide: Boolean(raw?.hasTourGuide ?? false),
+        tourGuideDescription: raw?.tourGuideDescription ?? "",
+        tourGuideImageUrl: raw?.tourGuideImageUrl ?? raw?.tourGuideImageURL ?? raw?.tourGuideImage ?? "",
+        mealsIncluded: Boolean(raw?.mealsIncluded ?? false),
+        diningDetails: raw?.diningDetails ?? raw?.diningDetail ?? "",
+        itinerary: normalizedItinerary,
         driverName: raw?.driverName ?? raw?.driver?.fullName ?? raw?.driver?.name ?? "",
         categoryName: raw?.categoryName ?? raw?.category?.name ?? "",
         categoryId: Number(raw?.categoryId ?? raw?.category?.id ?? 0) || undefined,
@@ -155,6 +195,7 @@ export const createDriverTrip = async (payload: TripPayload): Promise<Trip> => {
             ...payload,
             images: payload.imageUrls,
             tripImages: payload.imageUrls,
+            vehicleImages: payload.vehicleImageUrls,
         };
         const res = await api.post<TripApiResponse | Trip>("/driver/trips", requestBody as any);
         const data = (res.data as TripApiResponse)?.data ?? (res.data as Trip);
@@ -183,6 +224,7 @@ export const updateDriverTrip = async (id: number, payload: TripPayload): Promis
             ...payload,
             images: payload.imageUrls,
             tripImages: payload.imageUrls,
+            vehicleImages: payload.vehicleImageUrls,
         };
         const res = await api.put<TripApiResponse | Trip>(`/driver/trips/${id}`, requestBody as any);
         const data = (res.data as TripApiResponse)?.data ?? (res.data as Trip);

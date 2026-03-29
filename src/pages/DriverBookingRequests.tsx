@@ -33,6 +33,12 @@ const DriverBookingRequests: React.FC = () => {
   }, [isDriver]);
 
   const handleRespond = async (id: number, accept: boolean) => {
+    if (accept) {
+      const ok = confirm(
+        "Accepting this booking will automatically close any of your other available trips within a 4-hour window to prevent overbooking. Continue?"
+      );
+      if (!ok) return;
+    }
     setRespondingId(id);
     try {
       await respondDriverBooking(id, accept);

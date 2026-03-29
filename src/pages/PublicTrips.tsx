@@ -2,11 +2,7 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import type { Trip } from "../types/auth";
-import {
-  createBooking,
-  getPublicTripById,
-  searchPublicTrips,
-} from "../services/driverService";
+import { searchPublicTrips } from "../services/driverService";
 import AppLayout from "../components/AppLayout";
 import { useAuth } from "../context/AuthContext";
 
@@ -87,10 +83,7 @@ const PublicTrips: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [trips, setTrips] = useState<Trip[]>([]);
-  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
-  const [activeImage, setActiveImage] = useState(0);
-  const [seatsBooked, setSeatsBooked] = useState<number>(1);
-  const [bookingLoading, setBookingLoading] = useState(false);
+  // Detail view moved to /trips/:id page
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authTab, setAuthTab] = useState<"login" | "register">("login");
   const [authLoading, setAuthLoading] = useState(false);
@@ -176,50 +169,8 @@ const PublicTrips: React.FC = () => {
     fetchTrips();
   }, []);
 
-  const openTripDetail = async (id: number) => {
-    try {
-      const detail = await getPublicTripById(id);
-      setSelectedTrip(detail);
-      setActiveImage(0);
-      setSeatsBooked(1);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to load trip details");
-    }
-  };
-
-  const handleCreateBooking = async () => {
-    if (!selectedTrip) return;
-
-    if (!isAuthenticated) {
-      setAuthTab("login");
-      setAuthError("");
-      setShowAuthModal(true);
-      return;
-    }
-
-    if (!seatsBooked || seatsBooked < 1) {
-      toast.error("Please select at least 1 seat");
-      return;
-    }
-
-    setBookingLoading(true);
-    try {
-      await createBooking({
-        tripId: selectedTrip.id,
-        seatsBooked: Number(seatsBooked),
-      });
-      toast.success("Booking created (PENDING)");
-      setSelectedTrip(null);
-      await fetchTrips();
-    } catch (err: any) {
-      toast.error(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Failed to create booking"
-      );
-    } finally {
-      setBookingLoading(false);
-    }
+  const openTripDetail = (id: number) => {
+    navigate(`/trips/${id}`);
   };
 
   const handleAuthLogin = async (e: React.FormEvent) => {
@@ -572,117 +523,6 @@ const PublicTrips: React.FC = () => {
           <div className="absolute bottom-0 left-0 right-0 h-3 bg-gradient-to-r from-[#00ab42] via-[#00c74d] to-[#00eb5b]"></div>
         </div>
       </section>
-
-      {selectedTrip && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="max-w-4xl mx-auto bg-white rounded-2xl overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b border-slate-200">
-              <h2 className="text-xl font-bold">{selectedTrip.title}</h2>
-              <button
-                onClick={() => setSelectedTrip(null)}
-                className="text-slate-500 hover:text-slate-900"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="relative">
-              <img
-                src={
-                  selectedTrip.images?.[activeImage] ||
-                  "https://placehold.co/1200x700?text=Trip+Image"
-                }
-                alt={selectedTrip.title}
-                className="w-full h-72 md:h-96 object-cover"
-              />
-              <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-white/90 text-[10px] font-black uppercase tracking-widest text-slate-700">
-                Soksabay Go • {selectedTrip.categoryName || "Trip"}
-              </div>
-            </div>
-            <div className="p-4 flex gap-2 overflow-x-auto border-b border-slate-100">
-              {(selectedTrip.images || []).map((img, idx) => (
-                <button
-                  key={`${img}-${idx}`}
-                  onClick={() => setActiveImage(idx)}
-                >
-                  <img
-                    src={img}
-                    alt={`Trip ${idx + 1}`}
-                    className={`w-20 h-20 rounded-lg object-cover border-2 ${
-                      activeImage === idx
-                        ? "border-[#00ab42]"
-                        : "border-transparent"
-                    }`}
-                  />
-                </button>
-              ))}
-            </div>
-
-            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <p>
-                <span className="font-semibold">Route:</span>{" "}
-                {selectedTrip.origin} → {selectedTrip.destination}
-              </p>
-              <p>
-                <span className="font-semibold">Driver:</span>{" "}
-                {selectedTrip.driverName}
-              </p>
-              <p>
-                <span className="font-semibold">Category:</span>{" "}
-                {selectedTrip.categoryName}
-              </p>
-              <p>
-                <span className="font-semibold">Departure:</span>{" "}
-                {new Date(selectedTrip.departureTime).toLocaleString()}
-              </p>
-              <p>
-                <span className="font-semibold">Price:</span> $
-                {selectedTrip.pricePerSeat}/seat
-              </p>
-              <p>
-                <span className="font-semibold">Seats:</span>{" "}
-                {selectedTrip.availableSeats}/{selectedTrip.totalSeats}
-              </p>
-              <p className="md:col-span-2">
-                <span className="font-semibold">Description:</span>{" "}
-                {selectedTrip.description}
-              </p>
-            </div>
-
-            <div className="px-6 pb-6">
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-end gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-600 mb-1 block">
-                    Seats to book
-                  </label>
-                  <input
-                    type="number"
-                    aria-label="Seats to book"
-                    min={1}
-                    max={Math.max(1, Number(selectedTrip.availableSeats || 1))}
-                    value={seatsBooked}
-                    onChange={(e) => setSeatsBooked(Number(e.target.value))}
-                    className="w-32 px-3 py-2 rounded-lg border border-slate-200"
-                  />
-                </div>
-                <button
-                  onClick={handleCreateBooking}
-                  disabled={
-                    bookingLoading || Number(selectedTrip.availableSeats) <= 0
-                  }
-                  className="px-5 py-2.5 rounded-xl bg-[#00eb5b] text-slate-900 font-semibold hover:bg-[#00ab42] hover:text-white disabled:opacity-50 transition-colors"
-                >
-                  {bookingLoading
-                    ? "Booking..."
-                    : Number(selectedTrip.availableSeats) <= 0
-                    ? "No Seats Available"
-                    : "Book This Trip"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {showAuthModal && (
         <div className="fixed inset-0 z-[70] bg-slate-950/45 backdrop-blur-md p-4 flex items-center justify-center">

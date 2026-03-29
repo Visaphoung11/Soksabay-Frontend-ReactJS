@@ -9,6 +9,8 @@ import PublicTrips from "./pages/PublicTrips";
 import MyBookings from "./pages/MyBookings";
 import DriverBookingRequests from "./pages/DriverBookingRequests";
 import Profile from "./pages/Profile";
+import TripDetail from "./pages/TripDetail";
+import DriverTripDetail from "./pages/DriverTripDetail";
 import { ToastContainer } from "react-toastify";
 import URLSwitcher from "./components/URLSwitcher";
 
@@ -23,6 +25,7 @@ const AppContent = () => {
         <Route path="/" element={<PublicTrips />} />
         <Route path="/login" element={<Login />} />
         <Route path="/trips" element={<PublicTrips />} />
+        <Route path="/trips/:id" element={<TripDetail />} />
         <Route
           path="/dashboard"
           element={
@@ -44,6 +47,14 @@ const AppContent = () => {
           element={
             <ProtectedRoute>
               <DriverTrips />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/driver/trips/:id"
+          element={
+            <ProtectedRoute>
+              <DriverTripDetail />
             </ProtectedRoute>
           }
         />

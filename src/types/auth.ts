@@ -79,9 +79,39 @@ export interface Trip {
   departureTime: string;
   status: TripStatus;
   images: string[];
+  /** NEW: vehicle-specific photos (interior/exterior) */
+  vehicleImageUrls?: string[];
+  // NEW VEHICLE & PRICING FIELDS
+  transportationType?: string;
+  vehicleCapacity?: number;
+  isWholeVehicleBooking?: boolean;
+  wholeVehiclePrice?: number;
+
+  // NEW SCHEDULING & DETAILS
+  scheduleDescription?: string;
+  availabilitySchedule?: string;
+
+  // NEW OPTIONAL SERVICES
+  hasTourGuide?: boolean;
+  tourGuideDescription?: string;
+  tourGuideImageUrl?: string;
+
+  mealsIncluded?: boolean;
+  diningDetails?: string;
+
+  // NEW NESTED ITINERARY
+  itinerary?: TripItineraryItem[];
+
   driverName: string;
   categoryName: string;
   categoryId?: number;
+}
+
+export interface TripItineraryItem {
+  id?: number;
+  name: string;
+  description: string;
+  imageUrl?: string;
 }
 
 export interface TripPayload {
@@ -94,6 +124,29 @@ export interface TripPayload {
   departureTime: string; // ISO-8601
   categoryId: number;
   imageUrls: string[];
+  /** NEW: vehicle-specific photos (interior/exterior) */
+  vehicleImageUrls?: string[];
+
+  // NEW VEHICLE & PRICING FIELDS
+  transportationType: string;
+  vehicleCapacity: number;
+  isWholeVehicleBooking: boolean;
+  wholeVehiclePrice?: number;
+
+  // NEW SCHEDULING & DETAILS
+  scheduleDescription?: string;
+  availabilitySchedule?: string;
+
+  // NEW OPTIONAL SERVICES
+  hasTourGuide?: boolean;
+  tourGuideDescription?: string;
+  tourGuideImageUrl?: string;
+
+  mealsIncluded?: boolean;
+  diningDetails?: string;
+
+  // NEW NESTED ITINERARY
+  itinerary?: TripItineraryItem[];
 }
 
 export interface TripSearchParams {
