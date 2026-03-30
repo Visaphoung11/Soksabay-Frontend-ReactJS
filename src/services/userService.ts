@@ -6,6 +6,8 @@ export type UpdateMePayload = {
   contactNumber?: string;
   gender?: string;
   profileImage?: string;
+  bannerUrl?: string;
+  bio?: string;
 };
 
 /**
@@ -35,6 +37,18 @@ export const updateMe = async (payload: UpdateMePayload): Promise<User> => {
       raw.image_url ??
       prev.profileImage ??
       "",
+    bannerUrl:
+      raw.bannerUrl ??
+      raw.banner_url ??
+      raw.bannerImage ??
+      raw.bannerImageUrl ??
+      prev.bannerUrl ??
+      "",
+    bio: raw.bio ?? prev.bio ?? "",
+    ratingCount:
+      raw.ratingCount !== undefined && raw.ratingCount !== null
+        ? Number(raw.ratingCount)
+        : prev.ratingCount,
     role: raw.role ?? raw.roles ?? prev.role ?? ["USER"],
     // keep tokens from previous storage (update endpoint usually doesn't return them)
     accessToken: prev.accessToken ?? localStorage.getItem("accessToken") ?? "",

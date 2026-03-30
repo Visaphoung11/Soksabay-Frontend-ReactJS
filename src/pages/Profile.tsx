@@ -12,8 +12,11 @@ const Profile: React.FC = () => {
   const [contactNumber, setContactNumber] = useState(user?.contactNumber ?? "");
   const [gender, setGender] = useState(user?.gender ?? "");
   const [profileImage, setProfileImage] = useState(user?.profileImage ?? "");
+  const [bannerUrl, setBannerUrl] = useState(user?.bannerUrl ?? "");
+  const [bio, setBio] = useState(user?.bio ?? "");
 
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -21,6 +24,11 @@ const Profile: React.FC = () => {
     if (imageFile) return URL.createObjectURL(imageFile);
     return profileImage || "";
   }, [imageFile, profileImage]);
+
+  const bannerPreviewUrl = useMemo(() => {
+    if (bannerFile) return URL.createObjectURL(bannerFile);
+    return bannerUrl || "";
+  }, [bannerFile, bannerUrl]);
 
   const handlePickImage: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const f = e.target.files?.[0];
@@ -35,6 +43,19 @@ const Profile: React.FC = () => {
     }
 
     setImageFile(f);
+  };
+
+  const handlePickBanner: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+
+    const maxSizeBytes = 10 * 1024 * 1024;
+    if (f.size > maxSizeBytes) {
+      toast.error("Banner image too large. Max size is 10MB.");
+      e.target.value = "";
+      return;
+    }
+    setBannerFile(f);
   };
 
   const uploadProfileImageIfNeeded = async (): Promise<string> => {
@@ -53,6 +74,22 @@ const Profile: React.FC = () => {
     }
   };
 
+  const uploadBannerIfNeeded = async (): Promise<string> => {
+    if (!bannerFile) return bannerUrl;
+
+    setUploading(true);
+    try {
+      const uploaded = await uploadImage(bannerFile);
+      const url = uploaded.secure_url || uploaded.url;
+      if (!url) throw new Error("Upload succeeded but no URL returned");
+      setBannerUrl(url);
+      setBannerFile(null);
+      return url;
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit: React.FormEventHandler = async (e) => {
     e.preventDefault();
     if (!user) {
@@ -63,12 +100,15 @@ const Profile: React.FC = () => {
     setSaving(true);
     try {
       const uploadedUrl = await uploadProfileImageIfNeeded();
+      const uploadedBannerUrl = await uploadBannerIfNeeded();
 
       const updated = await updateMe({
         fullName,
         contactNumber,
         gender,
         profileImage: uploadedUrl,
+        bannerUrl: uploadedBannerUrl,
+        bio,
       });
 
       // Preserve tokens from current user object (update endpoint typically doesn't return them)
@@ -92,6 +132,46 @@ const Profile: React.FC = () => {
     <AppLayout title="Profile" subtitle="Update your personal information">
       <div className="max-w-3xl">
         <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8">
+          {/* Banner */}
+          <div className="mb-6">
+            <div className="w-full h-44 md:h-52 rounded-[2.5rem] overflow-hidden bg-slate-100 border border-slate-200">
+              {bannerPreviewUrl ? (
+                <img src={bannerPreviewUrl} alt="Banner" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm font-bold">
+                  No Banner
+                </div>
+              )}
+            </div>
+            <div className="mt-3 space-y-2">
+              <label className="block text-xs font-black uppercase tracking-widest text-slate-400">
+                Profile banner
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePickBanner}
+                className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#00eb5b]/20 file:text-[#00ab42] hover:file:bg-[#00eb5b]/30"
+                disabled={saving || uploading}
+              />
+              {bannerFile && (
+                <p className="text-[12px] text-slate-500">Selected: {bannerFile.name}</p>
+              )}
+              <div>
+                <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                  Or paste banner URL
+                </label>
+                <input
+                  value={bannerUrl}
+                  onChange={(e) => setBannerUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200"
+                  disabled={saving || uploading}
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col md:flex-row items-start gap-8">
             <div className="w-full md:w-[220px]">
               <div className="w-40 h-40 rounded-[2.5rem] overflow-hidden bg-slate-100 border border-slate-200">
@@ -125,6 +205,13 @@ const Profile: React.FC = () => {
               <div className="grid grid-cols-1 gap-5">
                 <Field label="Email" readOnly value={user?.email || ""} />
 
+                {!!user?.ratingCount && (
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+                    <p className="text-[11px] font-black uppercase tracking-widest text-emerald-700">Driver stats</p>
+                    <p className="text-sm font-black text-slate-900 mt-1">Ratings received: {user.ratingCount}</p>
+                  </div>
+                )}
+
                 <Field label="Full Name" value={fullName} onChange={setFullName} placeholder="Your full name" />
 
                 <Field
@@ -150,6 +237,19 @@ const Profile: React.FC = () => {
                     <option value="Other">Other</option>
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">
+                    Bio
+                  </label>
+                  <textarea
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Tell travelers about yourself..."
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#00eb5b]/40 min-h-28"
+                    disabled={saving}
+                  />
+                </div>
               </div>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -167,7 +267,10 @@ const Profile: React.FC = () => {
                     setContactNumber(user?.contactNumber ?? "");
                     setGender(user?.gender ?? "");
                     setProfileImage(user?.profileImage ?? "");
+                    setBannerUrl(user?.bannerUrl ?? "");
+                    setBio(user?.bio ?? "");
                     setImageFile(null);
+                    setBannerFile(null);
                   }}
                   disabled={saving || uploading}
                   className="px-8 py-4 rounded-2xl bg-white border border-slate-200 text-slate-700 font-black hover:bg-slate-50 transition-colors disabled:opacity-60"

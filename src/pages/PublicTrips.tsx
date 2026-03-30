@@ -5,6 +5,7 @@ import type { Trip } from "../types/auth";
 import { searchPublicTrips } from "../services/driverService";
 import AppLayout from "../components/AppLayout";
 import { useAuth } from "../context/AuthContext";
+import { getReviewsByTrip } from "../services/reviewService";
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -83,6 +84,8 @@ const PublicTrips: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [tripRatings, setTripRatings] = useState<Record<number, { avg: number; count: number }>>({});
+  const [ratingsUnavailable, setRatingsUnavailable] = useState(false);
   // Detail view moved to /trips/:id page
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authTab, setAuthTab] = useState<"login" | "register">("login");
@@ -151,6 +154,8 @@ const PublicTrips: React.FC = () => {
   const fetchTrips = async () => {
     setLoading(true);
     setError("");
+    // allow rating summaries to recover if backend was previously failing
+    setRatingsUnavailable(false);
     try {
       const data = await searchPublicTrips({
         origin: origin || undefined,
@@ -158,6 +163,26 @@ const PublicTrips: React.FC = () => {
         date: date || undefined,
       });
       setTrips(data);
+
+      // Fetch rating summary per trip (client-side) to show on cards.
+      // Note: this makes N requests; consider a backend aggregation endpoint later.
+      // If the backend review endpoint is broken (500), stop early to avoid spamming requests.
+      const entries: Array<readonly [number, { avg: number; count: number }]> = [];
+      try {
+        for (const t of (data || []).slice(0, 30)) {
+          const reviews = await getReviewsByTrip(t.id);
+          const count = reviews.length;
+          const avg = count
+            ? reviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0) / count
+            : 0;
+          entries.push([t.id, { avg, count }] as const);
+        }
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || err?.message || "Review rating summary unavailable";
+        console.warn("Rating summary disabled:", msg);
+        setRatingsUnavailable(true);
+      }
+      if (entries.length) setTripRatings(Object.fromEntries(entries));
     } catch (err: any) {
       setError(err?.response?.data?.message || "Failed to load trips");
     } finally {
@@ -439,6 +464,16 @@ const PublicTrips: React.FC = () => {
                 </div>
 
                 <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <TripRatingSummary
+                      avg={tripRatings[trip.id]?.avg ?? trip.averageRating ?? 0}
+                      count={tripRatings[trip.id]?.count ?? trip.reviewCount ?? 0}
+                      unavailable={ratingsUnavailable}
+                    />
+                    <span className="text-xs text-slate-500 font-semibold">
+                      {new Date(trip.departureTime).toLocaleDateString()}
+                    </span>
+                  </div>
                   <p className="text-xs text-slate-600 line-clamp-2 min-h-[32px]">
                     {trip.description ||
                       "No description provided for this trip."}
@@ -453,9 +488,7 @@ const PublicTrips: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>Driver: {trip.driverName || "Unknown"}</span>
-                    <span className="font-semibold">
-                      {new Date(trip.departureTime).toLocaleDateString()}
-                    </span>
+                    <span className="font-semibold">View details →</span>
                   </div>
                 </div>
               </button>
@@ -688,3 +721,64 @@ const PublicTrips: React.FC = () => {
 };
 
 export default PublicTrips;
+
+const TripRatingSummary = ({
+  avg,
+  count,
+  unavailable = false,
+}: {
+  avg: number;
+  count: number;
+  unavailable?: boolean;
+}) => {
+  if (unavailable) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-black text-slate-500">Rating unavailable</span>
+      </div>
+    );
+  }
+
+  const clamped = Math.max(0, Math.min(5, Number(avg) || 0));
+  // 1..5 scale maps directly to 0..5 stars
+  const stars = Math.round(clamped * 10) / 10;
+  const fullStars = Math.floor(stars);
+  const hasHalf = stars - fullStars >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-0.5 text-amber-500">
+        {Array.from({ length: fullStars }).map((_, i) => (
+          <Star key={`f-${i}`} />
+        ))}
+        {hasHalf ? <HalfStar /> : null}
+        {Array.from({ length: emptyStars }).map((_, i) => (
+          <Star key={`e-${i}`} className="text-slate-200" />
+        ))}
+      </div>
+      <span className="text-xs font-black text-slate-700">
+        {count > 0 ? `${clamped.toFixed(1)}/5` : "New"}
+      </span>
+      <span className="text-xs text-slate-500">({count})</span>
+    </div>
+  );
+};
+
+const Star = ({ className = "" }: { className?: string }) => (
+  <svg className={`w-4 h-4 ${className}`} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.81c-.783-.57-.38-1.81.588-1.81H7.03a1 1 0 00.95-.69l1.07-3.292z" />
+  </svg>
+);
+
+const HalfStar = () => (
+  <svg className="w-4 h-4 text-amber-500" viewBox="0 0 20 20" aria-hidden>
+    <defs>
+      <linearGradient id="half">
+        <stop offset="50%" stopColor="currentColor" />
+        <stop offset="50%" stopColor="#e2e8f0" />
+      </linearGradient>
+    </defs>
+    <path fill="url(#half)" d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.81c-.783-.57-.38-1.81.588-1.81H7.03a1 1 0 00.95-.69l1.07-3.292z" />
+  </svg>
+);

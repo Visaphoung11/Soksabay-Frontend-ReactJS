@@ -26,9 +26,16 @@ const Dashboard: React.FC = () => {
             </div>
             <div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Account</p>
-              <p className="text-lg font-black text-slate-900 font-outfit leading-tight">
-                {user?.fullName || user?.email}
-              </p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+              {user?.fullName || "User"}
+            </h2>
+            {user?.role?.some((r) => r.toUpperCase().includes("DRIVER")) && (
+              <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-black uppercase tracking-widest">
+                {user?.ratingCount ?? 0} ratings
+              </span>
+            )}
+          </div>
               <p className="text-sm text-slate-500">Keep your info up to date for smoother bookings.</p>
             </div>
           </div>

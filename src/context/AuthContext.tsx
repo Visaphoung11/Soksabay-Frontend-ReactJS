@@ -83,6 +83,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           raw.imageUrl ??
           raw.image_url ??
           "",
+        bannerUrl:
+          raw.bannerUrl ??
+          raw.banner_url ??
+          raw.bannerImage ??
+          raw.bannerImageUrl ??
+          "",
+        bio: raw.bio ?? "",
+        ratingCount:
+          raw.ratingCount !== undefined && raw.ratingCount !== null
+            ? Number(raw.ratingCount)
+            : undefined,
         role: raw.role ?? raw.roles ?? ["USER"],
         accessToken: bearerToken ?? raw.accessToken ?? "",
         refreshToken: raw.refreshToken ?? "",
@@ -158,6 +169,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         (raw as any)?.imageUrl ??
         (raw as any)?.image_url ??
         "",
+      bannerUrl:
+        (raw as any)?.bannerUrl ??
+        (raw as any)?.banner_url ??
+        (raw as any)?.bannerImage ??
+        (raw as any)?.bannerImageUrl ??
+        "",
+      bio: (raw as any)?.bio ?? "",
+      ratingCount:
+        (raw as any)?.ratingCount !== undefined && (raw as any)?.ratingCount !== null
+          ? Number((raw as any).ratingCount)
+          : undefined,
       role: raw.role ?? raw.roles ?? ["USER"],
       accessToken: raw.accessToken ?? "",
       refreshToken: raw.refreshToken ?? "",

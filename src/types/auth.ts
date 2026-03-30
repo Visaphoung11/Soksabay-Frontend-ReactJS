@@ -7,6 +7,12 @@ export interface User {
   contactNumber: string;
   /** Optional URL for user's avatar/profile picture */
   profileImage?: string;
+  /** Optional URL for profile banner/header image */
+  bannerUrl?: string;
+  /** Optional bio/about text */
+  bio?: string;
+  /** For drivers: number of ratings received */
+  ratingCount?: number;
   role: string[]; // e.g. ["USER"] or ["USER", "DRIVER"]
   accessToken: string;
   refreshToken: string;
@@ -102,9 +108,15 @@ export interface Trip {
   // NEW NESTED ITINERARY
   itinerary?: TripItineraryItem[];
 
+  /** NEW: driver id when backend includes it */
+  driverId?: number;
   driverName: string;
   categoryName: string;
   categoryId?: number;
+
+  /** Review summary (if backend provides it; otherwise computed client-side in list pages) */
+  averageRating?: number; // 1..5 (may be float)
+  reviewCount?: number;
 }
 
 export interface TripItineraryItem {
@@ -186,4 +198,35 @@ export interface Booking {
 export interface CreateBookingPayload {
   tripId: number;
   seatsBooked: number;
+}
+
+// ─── Reviews ────────────────────────────────────────────────────────────────
+export type TravelerType = "BUSINESS" | "COUPLES" | "FAMILY" | "FRIENDS" | "SOLO";
+
+export interface Review {
+  id: number;
+  tripId: number;
+  driverId?: number;
+  rating: number; // 1..5
+  title: string;
+  comment: string;
+  travelerType: TravelerType;
+  visitDate: string; // e.g. "March 2026"
+  imageUrls: string[];
+  createdAt?: string;
+
+  // optional author fields if backend returns them
+  userId?: number;
+  userFullName?: string;
+  userProfileImage?: string;
+}
+
+export interface CreateReviewPayload {
+  tripId: number;
+  rating: number; // 1..5
+  title: string;
+  comment: string;
+  travelerType: TravelerType;
+  visitDate: string;
+  imageUrls: string[];
 }

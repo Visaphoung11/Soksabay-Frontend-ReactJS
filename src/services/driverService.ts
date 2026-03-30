@@ -105,6 +105,12 @@ const normalizeTrip = (input: any): Trip => {
         mealsIncluded: Boolean(raw?.mealsIncluded ?? false),
         diningDetails: raw?.diningDetails ?? raw?.diningDetail ?? "",
         itinerary: normalizedItinerary,
+        driverId:
+            raw?.driverId !== undefined && raw?.driverId !== null
+                ? Number(raw.driverId)
+                : raw?.driver?.id !== undefined && raw?.driver?.id !== null
+                    ? Number(raw.driver.id)
+                    : undefined,
         driverName: raw?.driverName ?? raw?.driver?.fullName ?? raw?.driver?.name ?? "",
         categoryName: raw?.categoryName ?? raw?.category?.name ?? "",
         categoryId: Number(raw?.categoryId ?? raw?.category?.id ?? 0) || undefined,

@@ -11,6 +11,7 @@ import DriverBookingRequests from "./pages/DriverBookingRequests";
 import Profile from "./pages/Profile";
 import TripDetail from "./pages/TripDetail";
 import DriverTripDetail from "./pages/DriverTripDetail";
+import DriverPublicProfile from "./pages/DriverPublicProfile";
 import { ToastContainer } from "react-toastify";
 import URLSwitcher from "./components/URLSwitcher";
 
@@ -26,6 +27,7 @@ const AppContent = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/trips" element={<PublicTrips />} />
         <Route path="/trips/:id" element={<TripDetail />} />
+        <Route path="/drivers/:driverId" element={<DriverPublicProfile />} />
         <Route
           path="/dashboard"
           element={
