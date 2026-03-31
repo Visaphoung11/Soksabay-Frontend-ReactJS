@@ -114,6 +114,14 @@ const normalizeTrip = (input: any): Trip => {
         driverName: raw?.driverName ?? raw?.driver?.fullName ?? raw?.driver?.name ?? "",
         categoryName: raw?.categoryName ?? raw?.category?.name ?? "",
         categoryId: Number(raw?.categoryId ?? raw?.category?.id ?? 0) || undefined,
+        averageRating: raw?.averageRating !== undefined && raw?.averageRating !== null
+            ? Number(raw.averageRating)
+            : undefined,
+        totalReviews: raw?.totalReviews !== undefined && raw?.totalReviews !== null
+            ? Number(raw.totalReviews)
+            : raw?.reviewCount !== undefined && raw?.reviewCount !== null
+                ? Number(raw.reviewCount)
+                : undefined,
     } as Trip;
 };
 

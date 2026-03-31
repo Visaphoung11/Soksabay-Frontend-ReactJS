@@ -88,8 +88,12 @@ const TripDetail: React.FC = () => {
         const list = await getReviewsByTrip(tripId);
         setReviews(list);
       } catch (err: any) {
-        const msg = err?.response?.data?.message || err?.message || "Failed to load reviews";
-        setReviewsError(msg);
+        if (err?.response?.status === 401) {
+             setReviewsError("Reviews are not public yet. (Backend requires token for this endpoint)");
+        } else {
+             const msg = err?.response?.data?.message || err?.message || "Failed to load reviews";
+             setReviewsError(msg);
+        }
       } finally {
         setReviewsLoading(false);
       }

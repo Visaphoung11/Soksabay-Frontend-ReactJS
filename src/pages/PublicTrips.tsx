@@ -5,7 +5,6 @@ import type { Trip } from "../types/auth";
 import { searchPublicTrips } from "../services/driverService";
 import AppLayout from "../components/AppLayout";
 import { useAuth } from "../context/AuthContext";
-import { getReviewsByTrip } from "../services/reviewService";
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -84,8 +83,6 @@ const PublicTrips: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [trips, setTrips] = useState<Trip[]>([]);
-  const [tripRatings, setTripRatings] = useState<Record<number, { avg: number; count: number }>>({});
-  const [ratingsUnavailable, setRatingsUnavailable] = useState(false);
   // Detail view moved to /trips/:id page
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authTab, setAuthTab] = useState<"login" | "register">("login");
@@ -154,8 +151,6 @@ const PublicTrips: React.FC = () => {
   const fetchTrips = async () => {
     setLoading(true);
     setError("");
-    // allow rating summaries to recover if backend was previously failing
-    setRatingsUnavailable(false);
     try {
       const data = await searchPublicTrips({
         origin: origin || undefined,
@@ -163,26 +158,6 @@ const PublicTrips: React.FC = () => {
         date: date || undefined,
       });
       setTrips(data);
-
-      // Fetch rating summary per trip (client-side) to show on cards.
-      // Note: this makes N requests; consider a backend aggregation endpoint later.
-      // If the backend review endpoint is broken (500), stop early to avoid spamming requests.
-      const entries: Array<readonly [number, { avg: number; count: number }]> = [];
-      try {
-        for (const t of (data || []).slice(0, 30)) {
-          const reviews = await getReviewsByTrip(t.id);
-          const count = reviews.length;
-          const avg = count
-            ? reviews.reduce((acc, r) => acc + (Number(r.rating) || 0), 0) / count
-            : 0;
-          entries.push([t.id, { avg, count }] as const);
-        }
-      } catch (err: any) {
-        const msg = err?.response?.data?.message || err?.message || "Review rating summary unavailable";
-        console.warn("Rating summary disabled:", msg);
-        setRatingsUnavailable(true);
-      }
-      if (entries.length) setTripRatings(Object.fromEntries(entries));
     } catch (err: any) {
       setError(err?.response?.data?.message || "Failed to load trips");
     } finally {
@@ -466,9 +441,9 @@ const PublicTrips: React.FC = () => {
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <TripRatingSummary
-                      avg={tripRatings[trip.id]?.avg ?? trip.averageRating ?? 0}
-                      count={tripRatings[trip.id]?.count ?? trip.reviewCount ?? 0}
-                      unavailable={ratingsUnavailable}
+                      avg={trip.averageRating ?? 0}
+                      count={trip.totalReviews ?? 0}
+                      unavailable={false}
                     />
                     <span className="text-xs text-slate-500 font-semibold">
                       {new Date(trip.departureTime).toLocaleDateString()}
@@ -731,6 +706,9 @@ const TripRatingSummary = ({
   count: number;
   unavailable?: boolean;
 }) => {
+  // Debug logging
+  console.log('TripRatingSummary:', { avg, count, unavailable });
+  
   if (unavailable) {
     return (
       <div className="flex items-center gap-2">
@@ -745,6 +723,8 @@ const TripRatingSummary = ({
   const fullStars = Math.floor(stars);
   const hasHalf = stars - fullStars >= 0.5;
   const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+
+  console.log('Rating calculation:', { clamped, stars, fullStars, hasHalf, emptyStars });
 
   return (
     <div className="flex items-center gap-2">

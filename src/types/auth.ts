@@ -116,7 +116,7 @@ export interface Trip {
 
   /** Review summary (if backend provides it; otherwise computed client-side in list pages) */
   averageRating?: number; // 1..5 (may be float)
-  reviewCount?: number;
+  totalReviews?: number;
 }
 
 export interface TripItineraryItem {
