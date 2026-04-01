@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import Login from "./pages/Login";
-import Dashboard from "./components/Dashboard";
 import BecomeDriver from "./pages/BecomeDriver";
 import DriverTrips from "./pages/DriverTrips";
 import PublicTrips from "./pages/PublicTrips";
@@ -25,17 +24,11 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<PublicTrips />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/trips" element={<PublicTrips />} />
+        <Route path="/trips" element={<Navigate to="/" replace />} />
         <Route path="/trips/:id" element={<TripDetail />} />
         <Route path="/drivers/:driverId" element={<DriverPublicProfile />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
+
+    
         <Route
           path="/become-driver"
           element={
@@ -84,7 +77,7 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-        <Route path="*" element={<Navigate to="/trips" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

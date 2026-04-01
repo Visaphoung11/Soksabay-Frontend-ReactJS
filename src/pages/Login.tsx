@@ -39,7 +39,7 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       await loginWithEmail(loginEmail, loginPassword);
-      navigate("/dashboard");
+      navigate("/");
     } catch (err: any) {
       setError(err?.response?.data?.message || "Invalid email or password.");
     } finally {
@@ -57,7 +57,7 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       await register(fullName, regEmail, contactNumber, gender, regPassword);
-      navigate("/dashboard");
+      navigate("/");
     } catch (err: any) {
       setError(err?.response?.data?.message || "Registration failed.");
     } finally {

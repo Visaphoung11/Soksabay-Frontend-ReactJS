@@ -30,8 +30,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({
 
   const navItems = [
     { label: "Explore Trips", path: "/trips" },
-    { label: "Dashboard", path: "/dashboard" },
-    { label: "Profile", path: "/profile" },
+    // { label: "Dashboard", path: "/dashboard" },
+    // { label: "Profile", path: "/profile" },
     { label: "My Bookings", path: "/bookings" },
     ...(isDriver ? [{ label: "Driver Trips", path: "/driver/trips" }] : []),
     ...(isDriver
@@ -46,7 +46,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
 
   const handleLogout = async () => {
     await logout();
-    navigate("/trips", { replace: true });
+    navigate("/", { replace: true });
     setMobileOpen(false);
   };
 
@@ -140,9 +140,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({
                   <p className="text-sm font-bold text-slate-900 leading-tight">
                     {user?.fullName || user?.email}
                   </p>
-                  <p className="text-[11px] text-slate-500">
+                  {/* <p className="text-[11px] text-slate-500">
                     {user?.role?.[0] || "Member"}
-                  </p>
+                  </p> */}
                 </div>
               </button>
               <button
@@ -245,9 +245,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({
                   <p className="text-sm font-bold text-slate-900 truncate">
                     {user?.fullName || user?.email}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  {/* <p className="text-xs text-slate-500">
                     {user?.role?.[0] || "Member"}
-                  </p>
+                  </p> */}
                 </div>
               </button>
 
