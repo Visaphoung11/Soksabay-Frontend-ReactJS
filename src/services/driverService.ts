@@ -285,9 +285,9 @@ export const getDriverBookingRequests = async (): Promise<Booking[]> => {
     return Array.isArray(res.data) ? res.data : res.data.data;
 };
 
-export const respondDriverBooking = async (id: number, accept: boolean): Promise<Booking> => {
+export const respondDriverBooking = async (id: number, accept: boolean, reason?: string): Promise<Booking> => {
     const res = await api.patch<Booking | { data: Booking }>(`/driver/bookings/${id}/respond`, null, {
-        params: { accept },
+        params: { accept, reason },
     });
     return (res.data as any)?.data ?? (res.data as Booking);
 };

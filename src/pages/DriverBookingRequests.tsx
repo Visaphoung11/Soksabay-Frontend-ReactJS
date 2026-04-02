@@ -11,6 +11,9 @@ const DriverBookingRequests: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [respondingId, setRespondingId] = useState<number | null>(null);
   const [requests, setRequests] = useState<Booking[]>([]);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
 
   const pendingRequests = requests
     .filter((booking) => booking.status === "PENDING")
@@ -38,16 +41,42 @@ const DriverBookingRequests: React.FC = () => {
         "Accepting this booking will automatically close any of your other available trips within a 4-hour window to prevent overbooking. Continue?"
       );
       if (!ok) return;
+
+      setRespondingId(id);
+      try {
+        await respondDriverBooking(id, true);
+        toast.success("Booking confirmed");
+        await loadRequests();
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || err?.message || "Failed to respond booking");
+      } finally {
+        setRespondingId(null);
+      }
+    } else {
+      setSelectedBookingId(id);
+      setRejectionReason("");
+      setShowRejectModal(true);
     }
-    setRespondingId(id);
+  };
+
+  const submitRejection = async () => {
+    if (!selectedBookingId) return;
+    if (!rejectionReason.trim()) {
+      toast.error("Please provide a reason for rejection");
+      return;
+    }
+
+    setRespondingId(selectedBookingId);
     try {
-      await respondDriverBooking(id, accept);
-      toast.success(accept ? "Booking confirmed" : "Booking rejected");
+      await respondDriverBooking(selectedBookingId, false, rejectionReason);
+      toast.success("Booking rejected");
+      setShowRejectModal(false);
       await loadRequests();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || err?.message || "Failed to respond booking");
+      toast.error(err?.response?.data?.message || err?.message || "Failed to reject booking");
     } finally {
       setRespondingId(null);
+      setSelectedBookingId(null);
     }
   };
 
@@ -109,6 +138,53 @@ const DriverBookingRequests: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Rejection Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8">
+              <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6 text-red-500">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-2 font-outfit uppercase tracking-tight">Reject Booking</h3>
+              <p className="text-slate-500 text-sm mb-6">Please provide a reason for rejecting this booking. This will be shared with the passenger.</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Reason</label>
+                  <textarea
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    placeholder="e.g. Vehicle maintenance, Fully booked..."
+                    className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-100 focus:border-[#00ab42] focus:ring-4 focus:ring-[#00ab42]/5 transition-all outline-none text-slate-700 text-sm min-h-[100px] resize-none"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-8">
+                <button
+                  onClick={() => setShowRejectModal(false)}
+                  disabled={respondingId !== null}
+                  className="flex-1 px-6 py-4 rounded-2xl bg-slate-100 text-slate-600 text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitRejection}
+                  disabled={respondingId !== null || !rejectionReason.trim()}
+                  className="flex-2 px-6 py-4 rounded-2xl bg-red-600 text-white text-xs font-black uppercase tracking-widest hover:bg-red-700 shadow-lg shadow-red-600/20 transition-all disabled:opacity-50"
+                >
+                  {respondingId !== null ? "Rejecting..." : "Confirm Reject"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 };

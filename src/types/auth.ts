@@ -193,6 +193,7 @@ export interface Booking {
   trip: BookingTripInfo;
   passengerName: string;
   passengerPhone: string;
+  rejectionReason?: string;
 }
 
 export interface CreateBookingPayload {

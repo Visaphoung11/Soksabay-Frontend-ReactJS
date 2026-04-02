@@ -349,9 +349,9 @@ const TripDetail: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* LEFT COLUMN – Main TripAdvisor-style content */}
+            {/* LEFT COLUMN – Main content */}
             <div className="lg:col-span-2 space-y-8">
-              {/* HERO GALLERY – TripAdvisor header style */}
+              {/* HERO GALLERY –  header style */}
               <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
                 <div className="relative">
                   <img
@@ -361,7 +361,7 @@ const TripDetail: React.FC = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
-                  {/* TripAdvisor-style badge + rating overlay */}
+                  {/* rating overlay */}
                   <div className="absolute top-6 left-6 flex flex-col gap-2">
                     <div className="px-4 py-1 bg-white/90 text-[#00ab42] text-xs font-black uppercase tracking-widest rounded-3xl inline-flex items-center gap-1 shadow">
                       {trip.categoryName || "TRIP"}
@@ -398,7 +398,7 @@ const TripDetail: React.FC = () => {
                         key={`${img}-${idx}`}
                         onClick={() => setActiveImage(idx)}
                         className={`shrink-0 transition-all ${
-                          activeImage === idx ? "ring-4 ring-[#00eb5b] scale-105" : ""
+                          activeImage === idx ? " scale-105" : ""
                         }`}
                       >
                         <img

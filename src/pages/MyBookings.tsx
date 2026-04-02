@@ -65,7 +65,16 @@ const MyBookings: React.FC = () => {
                     <p className="text-xs text-slate-500">
                       {booking.status === "PENDING" && "Waiting for driver response..."}
                       {booking.status === "CONFIRMED" && "Driver accepted your booking ✅"}
-                      {booking.status === "REJECTED" && "Driver rejected your booking ❌"}
+                      {booking.status === "REJECTED" && (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-red-600 font-bold">Driver rejected your booking ❌</span>
+                          {booking.rejectionReason && (
+                            <p className="p-2 rounded-xl bg-red-50 text-red-700 text-[11px] border border-red-100 italic">
+                              Reason: {booking.rejectionReason}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </p>
                   </div>
                 </div>
