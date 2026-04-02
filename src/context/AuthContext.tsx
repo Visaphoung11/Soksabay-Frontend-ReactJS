@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import type { User, AuthContextType } from "../types/auth";
-import { registerUser, loginUser } from "../services/authService";
+import { getWsToken, registerUser, loginUser } from "../services/authService";
 import { api } from "../lib/axios";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -10,6 +10,7 @@ const KEYS = {
   ACCESS: "accessToken",
   REFRESH: "refreshToken",
   HINT: "auth_hint",
+  WS_ACCESS: "wsAccessToken",
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -44,10 +45,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(parsed);
       }
 
-      // 3. Cookie-first flow only when we have an auth hint.
-      // Avoid calling /users/me on first app load before login.
+      // If user is OAuth2 (cookie-based) and we previously stored a short-lived WS token
+      // under accessToken, migrate it to wsAccessToken so axios won't attach it to REST calls.
       const hasHint = localStorage.getItem(KEYS.HINT) === "true";
       if (hasHint) {
+        const refresh = localStorage.getItem(KEYS.REFRESH) || "";
+        const access = localStorage.getItem(KEYS.ACCESS) || "";
+        const wsAccess = localStorage.getItem(KEYS.WS_ACCESS) || "";
+        // Heuristic: OAuth2 flow usually has no refresh token.
+        if (!refresh && access && !wsAccess) {
+          localStorage.setItem(KEYS.WS_ACCESS, access);
+          localStorage.removeItem(KEYS.ACCESS);
+        }
+      }
+
+      // 3. Cookie-first flow only when we have an auth hint.
+      // Avoid calling /users/me on first app load before login.
+      if (hasHint) {
+        // If the user logged in via OAuth2 cookie-only flow, we still need a JWT
+        // for WebSocket STOMP CONNECT headers.
+        const existingWsAccess = localStorage.getItem(KEYS.WS_ACCESS);
+        if (!existingWsAccess) {
+          try {
+            const ws = await getWsToken();
+            const wsAccess = ws?.data?.accessToken;
+            if (wsAccess) {
+              localStorage.setItem(KEYS.WS_ACCESS, wsAccess);
+            }
+          } catch {
+            // ignore and fall back to cookie-based /users/me
+          }
+        }
+
+        // For OAuth2 users, /users/me should work via cookie; avoid sending WS JWT in REST.
         await fetchAndPersistUserFromServer(undefined, false);
       }
       return;
@@ -191,6 +221,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithGoogle = () => {
     localStorage.setItem(KEYS.HINT, "true");
+    // Prevent stale Bearer tokens from breaking OAuth2 cookie login.
+    localStorage.removeItem(KEYS.ACCESS);
+    localStorage.removeItem(KEYS.REFRESH);
     window.location.href = "http://localhost:8080/oauth2/authorization/google";
   };
 

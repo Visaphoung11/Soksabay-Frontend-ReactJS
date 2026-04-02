@@ -45,7 +45,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        const cfg = error.config as (typeof error.config & AuthRequestConfig) | undefined;
+        const shouldSkipAuth = cfg?.skipAuth === true;
+        if (error.response?.status === 401 && !shouldSkipAuth) {
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
             localStorage.removeItem("soksabay_user");

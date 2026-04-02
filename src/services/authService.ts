@@ -27,6 +27,15 @@ export interface LoginResponse {
     statusCode: number;
 }
 
+export interface WsTokenResponse {
+    statusCode: number;
+    message: string;
+    data: {
+        userId: number;
+        accessToken: string;
+    };
+}
+
 export const registerUser = async (payload: RegisterPayload): Promise<RegisterResponse> => {
     const res = await api.post<RegisterResponse>(
         "/auth-service/register",
@@ -46,5 +55,16 @@ export const loginUser = async (payload: LoginPayload): Promise<LoginResponse> =
             skipAuth: true,
         } as any
     );
+    return res.data;
+};
+
+/**
+ * OAuth2 users authenticate via HttpOnly cookie; this endpoint returns a short-lived JWT
+ * for WebSocket STOMP CONNECT (Authorization header).
+ */
+export const getWsToken = async (): Promise<WsTokenResponse> => {
+    const res = await api.get<WsTokenResponse>("/auth-service/ws-token", {
+        skipAuth: true,
+    } as any);
     return res.data;
 };

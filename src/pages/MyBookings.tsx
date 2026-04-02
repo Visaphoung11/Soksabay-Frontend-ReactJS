@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import AppLayout from "../components/AppLayout";
 import { getMyBookings } from "../services/driverService";
 import type { Booking } from "../types/auth";
@@ -11,6 +12,7 @@ const statusClass = (status: Booking["status"]) => {
 };
 
 const MyBookings: React.FC = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>([]);
 
@@ -61,6 +63,27 @@ const MyBookings: React.FC = () => {
                   <p><span className="font-semibold">Seats booked:</span> {booking.seatsBooked}</p>
                   <p><span className="font-semibold">Total price:</span> ${booking.totalPrice}</p>
                   <p className="text-xs text-slate-500"><span className="font-semibold">Booked at:</span> {new Date(booking.createdAt).toLocaleString()}</p>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const driverId = booking.trip?.driverId;
+                        if (!driverId) {
+                          toast.error("Driver id not available for this booking yet.");
+                          return;
+                        }
+                        navigate(`/chat?userId=${driverId}`);
+                      }}
+                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-black text-xs uppercase tracking-wider hover:bg-emerald-50 hover:border-emerald-200"
+                    >
+                      Message driver
+                    </button>
+                    <p className="text-[11px] text-slate-500 mt-2">
+                      Chat is available for PENDING, CONFIRMED, and REJECTED bookings.
+                    </p>
+                  </div>
+
                   <div className="pt-2 border-t border-slate-100">
                     <p className="text-xs text-slate-500">
                       {booking.status === "PENDING" && "Waiting for driver response..."}

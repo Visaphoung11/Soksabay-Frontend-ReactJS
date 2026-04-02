@@ -2,6 +2,7 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import NotificationBell from "./NotificationBell";
+import ChatBell from "./ChatBell";
 import soksabayLogo from "../assets/soksabay-logo.svg";
 
 interface AppLayoutProps {
@@ -32,6 +33,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
     { label: "Explore Trips", path: "/trips" },
     // { label: "Dashboard", path: "/dashboard" },
     // { label: "Profile", path: "/profile" },
+    { label: "Chat", path: "/chat" },
     { label: "My Bookings", path: "/bookings" },
     ...(isDriver ? [{ label: "Driver Trips", path: "/driver/trips" }] : []),
     ...(isDriver
@@ -121,6 +123,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
             </div>
           ) : (
             <div className="hidden lg:flex items-center gap-3">
+              <ChatBell />
               <NotificationBell />
               <button
                 onClick={() => navigate("/profile")}

@@ -11,6 +11,7 @@ import Profile from "./pages/Profile";
 import TripDetail from "./pages/TripDetail";
 import DriverTripDetail from "./pages/DriverTripDetail";
 import DriverPublicProfile from "./pages/DriverPublicProfile";
+import Chat from "./pages/Chat";
 import { ToastContainer } from "react-toastify";
 import URLSwitcher from "./components/URLSwitcher";
 
@@ -74,6 +75,15 @@ const AppContent = () => {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <Chat />
             </ProtectedRoute>
           }
         />

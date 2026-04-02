@@ -182,6 +182,7 @@ export interface BookingTripInfo {
   destination: string;
   departureTime: string;
   driverName: string;
+  driverId?: number;
 }
 
 export interface Booking {
