@@ -33,7 +33,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({
     { label: "Explore Trips", path: "/trips" },
     // { label: "Dashboard", path: "/dashboard" },
     // { label: "Profile", path: "/profile" },
-    { label: "Chat", path: "/chat" },
     { label: "My Bookings", path: "/bookings" },
     ...(isDriver ? [{ label: "Driver Trips", path: "/driver/trips" }] : []),
     ...(isDriver

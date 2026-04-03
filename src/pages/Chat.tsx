@@ -31,6 +31,26 @@ const formatTime = (iso: string) => {
   }
 };
 
+// Format "last seen" relative time
+const formatLastSeen = (lastActiveAt?: string): string => {
+  if (!lastActiveAt) return "";
+  try {
+    const hasTimezone = /([zZ]|[+-]\d{2}:?\d{2})$/.test(lastActiveAt);
+    const normalized = hasTimezone ? lastActiveAt : `${lastActiveAt}Z`;
+    const lastActive = new Date(normalized).getTime();
+    const now = Date.now();
+    const diffMs = now - lastActive;
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+    return `${Math.floor(diffMins / 1440)}d ago`;
+  } catch {
+    return "";
+  }
+};
+
 const isMine = (meId: number | undefined, msg: ChatMessageResponse) => {
   if (!meId) return false;
   return Number(msg.senderId) === Number(meId);
@@ -51,6 +71,7 @@ const ChatPage: React.FC = () => {
 
   const [loadingConvos, setLoadingConvos] = useState(false);
   const [conversations, setConversations] = useState<User[]>([]);
+  const [convoLastMessage, setConvoLastMessage] = useState<Record<number, string>>({});
   const [activeUser, setActiveUser] = useState<User | null>(null);
   const activeUserIdRef = useRef<number>(0);
   const [unreadTick, setUnreadTick] = useState(0);
@@ -62,11 +83,40 @@ const ChatPage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [pendingImageUrl, setPendingImageUrl] = useState<string>("");
 
+  // Animation state for smooth transitions
+  const [convoListAnimating, setConvoListAnimating] = useState(false);
+
   const threadRef = useRef<HTMLDivElement>(null);
+  const [threadAnimating, setThreadAnimating] = useState(false);
 
   const convoRefreshTimer = useRef<number | null>(null);
 
   const activeUserId = activeUser?.userId ?? 0;
+
+  // Sort conversations by most recent message time (newest on top)
+  const sortedConversations = useMemo(() => {
+    const toMs = (iso: string) => {
+      try {
+        const hasTimezone = /([zZ]|[+-]\d{2}:?\d{2})$/.test(iso);
+        return new Date(hasTimezone ? iso : `${iso}Z`).getTime();
+      } catch {
+        return 0;
+      }
+    };
+
+    return [...conversations].sort((a, b) => {
+      // Priority: 1) WebSocket real-time timestamps, 2) API lastMessageTime from backend
+      const timeA = convoLastMessage[Number(a.userId)] || (a as any).lastMessageTime || "";
+      const timeB = convoLastMessage[Number(b.userId)] || (b as any).lastMessageTime || "";
+      // If neither has a timestamp, keep original order
+      if (!timeA && !timeB) return 0;
+      // If only one has a timestamp, put it first
+      if (!timeA) return 1;
+      if (!timeB) return -1;
+      // Sort by timestamp descending (newest first)
+      return toMs(timeB) - toMs(timeA);
+    });
+  }, [conversations, convoLastMessage]);
 
   useEffect(() => {
     activeUserIdRef.current = activeUserId;
@@ -149,6 +199,12 @@ const ChatPage: React.FC = () => {
       accessToken: "",
       refreshToken: "",
     };
+
+    // Store the latest message timestamp for sorting
+    setConvoLastMessage((prev) => ({
+      ...prev,
+      [otherUserId]: msg.timestamp,
+    }));
 
     setConversations((prev) => {
       const without = prev.filter((u) => Number(u.userId) !== Number(otherUserId));
@@ -290,6 +346,14 @@ const ChatPage: React.FC = () => {
     setTimeout(scrollToBottom, 0);
   }, [filteredMessages.length]);
 
+  // Animate thread when active user changes
+  useEffect(() => {
+    if (activeUserId) {
+      setThreadAnimating(true);
+      setTimeout(() => setThreadAnimating(false), 200);
+    }
+  }, [activeUserId]);
+
   const send = async (type: ChatMessageType, content?: string, mediaUrl?: string) => {
     if (!activeUserId) {
       toast.error("Select a conversation first");
@@ -376,25 +440,38 @@ const ChatPage: React.FC = () => {
                 </p>
               </div>
             </div>
-            <div className="max-h-[70vh] overflow-y-auto">
+            <div className={`max-h-[70vh] overflow-y-auto transition-opacity duration-300 ${convoListAnimating ? "opacity-50" : "opacity-100"}`}>
               {loadingConvos ? (
                 <div className="p-4 text-sm text-slate-500">Loading...</div>
               ) : conversations.length === 0 ? (
                 <div className="p-4 text-sm text-slate-500">No conversations yet.</div>
               ) : (
-                conversations.map((u) => {
+                sortedConversations.map((u) => {
                   const active = u.userId === activeUserId;
                   const unread = getUnreadForUser(u.userId);
+                  const isOnline = (u as any).isOnline === true;
+                  const lastActiveAt = (u as any).lastActiveAt;
+                  const lastSeen = !isOnline && lastActiveAt ? formatLastSeen(lastActiveAt) : "";
+                  
+                  // Debug logging (remove in production)
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log(`User ${u.userId}: isOnline=`, isOnline, ', lastActiveAt=', lastActiveAt);
+                  }
+                  
                   return (
                     <button
                       key={u.userId}
-                      onClick={() => setActiveUser(u)}
-                      className={`w-full text-left px-4 py-3 border-b border-slate-100 hover:bg-slate-50 ${
+                      onClick={() => {
+                        setConvoListAnimating(true);
+                        setActiveUser(u);
+                        setTimeout(() => setConvoListAnimating(false), 300);
+                      }}
+                      className={`w-full text-left px-4 py-3 border-b border-slate-100 hover:bg-slate-50 transition-all duration-300 ${
                         active ? "bg-emerald-50" : "bg-white"
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-[#00eb5b]/15 border border-[#00eb5b]/20 overflow-hidden flex items-center justify-center shrink-0">
+                        <div className="relative w-10 h-10 rounded-2xl bg-[#00eb5b]/15 border border-[#00eb5b]/20 overflow-hidden flex items-center justify-center shrink-0">
                           {u.profileImage ? (
                             <img src={u.profileImage} alt={u.fullName} className="w-full h-full object-cover" />
                           ) : (
@@ -402,13 +479,19 @@ const ChatPage: React.FC = () => {
                               {(u.fullName || u.email || "U").slice(0, 1).toUpperCase()}
                             </span>
                           )}
+                          {/* Online indicator */}
+                          {isOnline && (
+                            <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
+                          )}
                         </div>
 
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-black text-slate-900 truncate">
                             {u.fullName || u.email}
                           </p>
-                          <p className="text-[11px] text-slate-500 truncate">{u.email}</p>
+                          <p className={`text-[11px] truncate ${isOnline ? "text-emerald-600 font-semibold" : lastSeen ? "text-slate-400" : "text-slate-500"}`}>
+                            {isOnline ? "Online" : lastSeen || u.email}
+                          </p>
                         </div>
 
                         {unread > 0 ? (
@@ -442,7 +525,12 @@ const ChatPage: React.FC = () => {
               </div>
             </div>
 
-            <div ref={threadRef} className="flex-1 p-4 overflow-y-auto max-h-[60vh] bg-slate-50">
+            <div
+              ref={threadRef}
+              className={`flex-1 p-4 overflow-y-auto max-h-[60vh] bg-slate-50 transition-opacity duration-200 ${
+                threadAnimating ? "opacity-50" : "opacity-100"
+              }`}
+            >
               {loadingHistory ? (
                 <div className="text-sm text-slate-500">Loading messages...</div>
               ) : orderedMessages.length === 0 ? (

@@ -10,7 +10,12 @@ const unwrapList = <T,>(resData: any): T[] => {
   return (Array.isArray(v2) ? v2 : (v2?.data ?? [])) as T[];
 };
 
-const normalizeConversationUser = (raw: any): User => {
+const normalizeConversationUser = (raw: any): User & { lastMessageTime?: string; isOnline?: boolean; lastActiveAt?: string } => {
+  // Debug: log raw response
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Conversation raw:', JSON.stringify(raw));
+  }
+  
   return {
     userId: Number(raw?.userId ?? raw?.id ?? 0),
     email: raw?.email ?? "",
@@ -25,11 +30,16 @@ const normalizeConversationUser = (raw: any): User => {
     // Conversations endpoint won't return tokens.
     accessToken: "",
     refreshToken: "",
+    // Last message timestamp from backend
+    lastMessageTime: raw?.lastMessageTime ?? raw?.lastMessageAt ?? raw?.lastMessage?.timestamp ?? undefined,
+    // Online status from backend - try multiple field names
+    isOnline: raw?.isOnline ?? raw?.online ?? raw?.isActive ?? false,
+    lastActiveAt: raw?.lastActiveAt ?? raw?.lastSeenAt ?? raw?.lastActive ?? raw?.lastSeen ?? undefined,
   };
 };
 
 /** GET /api/v1/chat/conversations */
-export const getChatConversations = async (): Promise<User[]> => {
+export const getChatConversations = async (): Promise<(User & { lastMessageTime?: string; isOnline?: boolean; lastActiveAt?: string })[]> => {
   const res = await api.get<ApiList<User>>("/chat/conversations");
   const list = unwrapList<any>(res.data);
   return (list || []).map(normalizeConversationUser).filter((u) => u.userId);
