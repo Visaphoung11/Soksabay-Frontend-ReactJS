@@ -4,7 +4,8 @@ import { Client, type IMessage } from "@stomp/stompjs";
 import SockJS from "sockjs-client/dist/sockjs";
 import { useAuth } from "../context/AuthContext";
 import type { ChatMessageResponse } from "../types/chat";
-import { getUnreadTotal, incrementUnread } from "../services/chatUnreadStore";
+import { getUnreadTotal, incrementUnread, isMessageProcessed, markMessageProcessed } from "../services/chatUnreadStore";
+import { getWsToken } from "../services/authService";
 
 const getWsUrl = () => {
   const envURL = import.meta.env.VITE_WS_BASE_URL;
@@ -33,48 +34,121 @@ const ChatBell: React.FC = () => {
     if (!isAuthenticated || !user?.userId) return;
     if (stompClientRef.current?.active) return;
 
-    const token =
-      localStorage.getItem("wsAccessToken") ||
-      localStorage.getItem("accessToken") ||
-      user.accessToken ||
-      "";
+    // Token provider function that fetches a fresh WebSocket token
+    const getToken = async (): Promise<string> => {
+      try {
+        const wsResponse = await getWsToken();
+        const newToken = wsResponse?.data?.accessToken;
+        if (newToken) {
+          localStorage.setItem("wsAccessToken", newToken);
+          return newToken;
+        }
+        throw new Error("No token in response");
+      } catch (err) {
+        console.error("Failed to fetch WebSocket token:", err);
+        const cachedToken = localStorage.getItem("wsAccessToken") || localStorage.getItem("accessToken") || "";
+        if (cachedToken) return cachedToken;
+        throw err;
+      }
+    };
 
-    const connectHeaders: Record<string, string> = {};
-    if (token) connectHeaders.Authorization = `Bearer ${token}`;
+    let active = true;
+    let refreshInterval: ReturnType<typeof setInterval> | undefined;
 
-    const client = new Client({
-      webSocketFactory: () => new SockJS(getWsUrl()),
-      connectHeaders,
-      debug: () => {},
-      reconnectDelay: 5000,
-      heartbeatIncoming: 10000,
-      heartbeatOutgoing: 10000,
-      onConnect: () => {
-        client.subscribe("/user/queue/messages", (frame: IMessage) => {
-          try {
-            const msg = JSON.parse(frame.body) as ChatMessageResponse;
-            const meId = Number(user.userId);
-            const otherUserId = Number(msg.senderId) === meId ? Number(msg.recipientId) : Number(msg.senderId);
-            if (!otherUserId) return;
+    // Connect and set up periodic token refresh
+    const setupConnection = async () => {
+      try {
+        const token = await getToken();
+        if (!active) return;
 
-            // If user is currently on /chat, the chat page will manage unread clearing.
-            // Otherwise, bump unread count.
-            if (!window.location.pathname.startsWith("/chat")) {
-              incrementUnread(otherUserId, 1);
+        const connectHeaders: Record<string, string> = {
+          Authorization: `Bearer ${token}`,
+        };
+
+        const client = new Client({
+          webSocketFactory: () => new SockJS(getWsUrl()),
+          connectHeaders,
+          debug: () => { },
+          reconnectDelay: 5000,
+          heartbeatIncoming: 10000,
+          heartbeatOutgoing: 10000,
+          beforeConnect: async () => {
+            try {
+              const freshToken = await getToken();
+              client.connectHeaders = {
+                Authorization: `Bearer ${freshToken}`,
+              };
+            } catch (err) {
+              console.warn("Failed to refresh token before reconnect:", err);
             }
-          } catch {
-            // ignore
-          }
-        });
-      },
-    });
+          },
+          onConnect: () => {
+            client.subscribe("/user/queue/messages", (frame: IMessage) => {
+              try {
+                const msg = JSON.parse(frame.body) as ChatMessageResponse;
+                const msgId = msg.id;
 
-    client.activate();
-    stompClientRef.current = client;
+                if (msgId && isMessageProcessed(msgId)) {
+                  console.log("[ChatBell] Already processed message ID:", msgId);
+                  return;
+                }
+                if (msgId) {
+                  markMessageProcessed(msgId);
+                }
+
+                const meId = Number(user.userId);
+                const senderId = Number(msg.senderId);
+
+                // Only process incoming messages (sent TO the current user)
+                const isIncoming = senderId !== meId;
+
+                if (!isIncoming) {
+                  return;
+                }
+
+                // Only increment if not on chat page
+                if (window.location.pathname.startsWith("/chat")) {
+                  return;
+                }
+
+                // Use sender's ID as the conversation key (who sent the message)
+                const conversationKey = senderId;
+
+                incrementUnread(conversationKey, 1);
+              } catch (err) {
+                console.error("[ChatBell] Error processing message:", err);
+              }
+            });
+          },
+        });
+
+        if (!active) return;
+        client.activate();
+        stompClientRef.current = client;
+
+        // Refresh token every 50 minutes
+        refreshInterval = setInterval(async () => {
+          try {
+            await getToken();
+          } catch (err) {
+            console.warn("Token refresh failed:", err);
+          }
+        }, 50 * 60 * 1000);
+
+      } catch (err) {
+        console.error("Failed to set up chat socket:", err);
+      }
+    };
+
+    setupConnection();
 
     return () => {
-      stompClientRef.current?.deactivate();
-      stompClientRef.current = null;
+      active = false;
+      if (refreshInterval) clearInterval(refreshInterval);
+      if (stompClientRef.current) {
+        stompClientRef.current.deactivate();
+        stompClientRef.current = null;
+      }
     };
   }, [isAuthenticated, user?.userId]);
 

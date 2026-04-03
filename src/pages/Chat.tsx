@@ -4,17 +4,20 @@ import { useSearchParams } from "react-router-dom";
 import AppLayout from "../components/AppLayout";
 import { useAuth } from "../context/AuthContext";
 import { getChatConversations, getChatHistory } from "../services/chatService";
+import { getWsToken } from "../services/authService";
 import { ChatSocket } from "../services/chatSocket";
 import { uploadImage } from "../services/driverService";
 import type { User } from "../types/auth";
 import type { ChatMessageRequest, ChatMessageResponse, ChatMessageType } from "../types/chat";
-import { clearUnread, getUnreadForUser, incrementUnread } from "../services/chatUnreadStore";
+import { clearUnread, getUnreadForUser } from "../services/chatUnreadStore";
+import ChatSidebar from "../components/chat/ChatSidebar";
+import ChatThread from "../components/chat/ChatThread";
+import { ChatComposer } from "../components/chat/ChatComponents";
 
 const getWsUrl = () => {
   const envURL = import.meta.env.VITE_WS_BASE_URL;
   if (envURL) return envURL;
   const apiBase = import.meta.env.VITE_API_BASE_URL || localStorage.getItem("API_BASE_URL") || "http://localhost:8080/api/v1";
-  // apiBase is typically http://host:port/api/v1 => ws should be http://host:port/ws-soksabay
   const root = apiBase.replace(/\/api\/v1\/?$/, "");
   return `${root}/ws-soksabay`;
 };
@@ -22,8 +25,6 @@ const getWsUrl = () => {
 const formatTime = (iso: string) => {
   try {
     const hasTimezone = /([zZ]|[+-]\d{2}:?\d{2})$/.test(iso);
-    // Backend currently sends LocalDateTime (no timezone). In Docker it's commonly UTC.
-    // Treat timezone-less timestamps as UTC so the UI shows correct local time.
     const normalized = hasTimezone ? iso : `${iso}Z`;
     return new Date(normalized).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   } catch {
@@ -31,7 +32,6 @@ const formatTime = (iso: string) => {
   }
 };
 
-// Format "last seen" relative time
 const formatLastSeen = (lastActiveAt?: string): string => {
   if (!lastActiveAt) return "";
   try {
@@ -51,17 +51,11 @@ const formatLastSeen = (lastActiveAt?: string): string => {
   }
 };
 
-const isMine = (meId: number | undefined, msg: ChatMessageResponse) => {
-  if (!meId) return false;
-  return Number(msg.senderId) === Number(meId);
-};
+// Helper is no longer needed here as ChatThread handles it
 
 const ChatPage: React.FC = () => {
   const { user } = useAuth();
   const meId = user?.userId;
-  // Email/password flow stores JWT in localStorage.
-  // OAuth2 flow may rely on HttpOnly cookies so token can be empty.
-  const token = localStorage.getItem("wsAccessToken") || localStorage.getItem("accessToken") || user?.accessToken || "";
 
   const [searchParams] = useSearchParams();
   const preselectUserId = Number(searchParams.get("userId") || 0) || 0;
@@ -83,17 +77,22 @@ const ChatPage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const [pendingImageUrl, setPendingImageUrl] = useState<string>("");
 
-  // Animation state for smooth transitions
-  const [convoListAnimating, setConvoListAnimating] = useState(false);
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<number | null>(null);
+  const [pendingVoiceUrl, setPendingVoiceUrl] = useState<string>("");
+
+  const [chatKey, setChatKey] = useState(0);
 
   const threadRef = useRef<HTMLDivElement>(null);
-  const [threadAnimating, setThreadAnimating] = useState(false);
-
   const convoRefreshTimer = useRef<number | null>(null);
 
   const activeUserId = activeUser?.userId ?? 0;
 
-  // Sort conversations by most recent message time (newest on top)
+  // Sort conversations by most recent message time
   const sortedConversations = useMemo(() => {
     const toMs = (iso: string) => {
       try {
@@ -105,15 +104,11 @@ const ChatPage: React.FC = () => {
     };
 
     return [...conversations].sort((a, b) => {
-      // Priority: 1) WebSocket real-time timestamps, 2) API lastMessageTime from backend
-      const timeA = convoLastMessage[Number(a.userId)] || (a as any).lastMessageTime || "";
-      const timeB = convoLastMessage[Number(b.userId)] || (b as any).lastMessageTime || "";
-      // If neither has a timestamp, keep original order
+      const timeA = convoLastMessage[Number(a.userId)] || a.lastMessageTime || "";
+      const timeB = convoLastMessage[Number(b.userId)] || b.lastMessageTime || "";
       if (!timeA && !timeB) return 0;
-      // If only one has a timestamp, put it first
       if (!timeA) return 1;
       if (!timeB) return -1;
-      // Sort by timestamp descending (newest first)
       return toMs(timeB) - toMs(timeA);
     });
   }, [conversations, convoLastMessage]);
@@ -124,13 +119,12 @@ const ChatPage: React.FC = () => {
 
   useEffect(() => {
     const onUnread = () => setUnreadTick((x) => x + 1);
-    window.addEventListener("chat:unread", onUnread as any);
-    return () => window.removeEventListener("chat:unread", onUnread as any);
+    window.addEventListener("chat:unread", onUnread as EventListener);
+    return () => window.removeEventListener("chat:unread", onUnread as EventListener);
   }, []);
 
-  // Force re-render when unread map changes (stored in localStorage)
   useEffect(() => {
-    // noop: state update already happened; effect exists only to satisfy lint/ts usage.
+    // Force re-render on unread update
   }, [unreadTick]);
 
   const filteredMessages = useMemo(() => {
@@ -170,18 +164,14 @@ const ChatPage: React.FC = () => {
       const list = await getChatConversations();
       setConversations(list || []);
 
-      // Never auto-switch the active conversation during background refresh.
-      // Only set active when caller explicitly asks (preferUserId).
       if (!preferUserId) return;
-
-      // Prefer the explicit userId (e.g., from ?userId=) if present.
       const targetId = Number(preferUserId || activeUserId || 0) || 0;
       if (!targetId) return;
 
       const hit = (list || []).find((u) => Number(u.userId) === Number(targetId));
       if (hit) setActiveUser(hit);
     } catch {
-      // ignore background refresh errors
+      // Ignored
     }
   };
 
@@ -200,39 +190,49 @@ const ChatPage: React.FC = () => {
       refreshToken: "",
     };
 
-    // Store the latest message timestamp for sorting
     setConvoLastMessage((prev) => ({
       ...prev,
       [otherUserId]: msg.timestamp,
     }));
 
     setConversations((prev) => {
+      const existing = prev.find((u) => Number(u.userId) === Number(otherUserId));
+      const updatedUser: User = existing ? { ...existing } : { ...other };
+
+      // Update name/email from the latest message metadata
+      updatedUser.email = Number(msg.senderId) === Number(meId) ? msg.recipientEmail : msg.senderEmail;
+      updatedUser.fullName = Number(msg.senderId) === Number(meId) ? msg.recipientName : msg.senderName;
+
+      // Sync activeUser if it's the current one
+      if (Number(updatedUser.userId) === activeUserIdRef.current) {
+        setActiveUser(updatedUser);
+      }
+
       const without = prev.filter((u) => Number(u.userId) !== Number(otherUserId));
-      // Put the most recent chatter on top.
-      return [other, ...without];
+      return [updatedUser, ...without];
     });
 
-    // If nothing is selected yet, auto-open this conversation.
     if (!activeUserIdRef.current) {
-      setActiveUser(other);
+      setConversations((latest) => {
+        const found = latest.find((u) => Number(u.userId) === Number(otherUserId));
+        if (found) setActiveUser(found);
+        return latest;
+      });
     }
   };
 
   useEffect(() => {
-    // load conversations
     const run = async () => {
       setLoadingConvos(true);
       try {
         const list = await getChatConversations();
         setConversations(list || []);
-        // If we were navigated here with ?userId=, preselect that user.
         const pre = preselectUserId && (list || []).find((u) => Number(u.userId) === Number(preselectUserId));
         if (pre) {
           setActiveUser(pre);
         } else if (!activeUser && list?.length) {
           setActiveUser(list[0]);
         } else if (preselectUserId && !pre) {
-          // We might not have a conversation yet; create a minimal placeholder.
           setActiveUser({
             userId: preselectUserId,
             email: "",
@@ -242,26 +242,21 @@ const ChatPage: React.FC = () => {
             role: ["USER"],
             accessToken: "",
             refreshToken: "",
-          } as any);
+          } as User);
         }
-      } catch (err: any) {
-        toast.error(err?.response?.data?.message || err?.message || "Failed to load conversations");
+      } catch (err: unknown) {
+        const error = err as { response?: { data?: { message?: string } }; message?: string };
+        toast.error(error?.response?.data?.message || error?.message || "Failed to load conversations");
       } finally {
         setLoadingConvos(false);
       }
     };
 
     run();
-
-    // Ensure the latest conversation list is loaded once when opening the chat page.
-    // (No auto-switch; refreshConversations only affects selection if preferUserId is provided.)
     refreshConversations(preselectUserId || undefined);
 
-    // With true real-time, we shouldn't refetch conversations frequently.
-    // Keep a slow refresh as a safety net (e.g., if WS misses for some reason).
     if (convoRefreshTimer.current) window.clearInterval(convoRefreshTimer.current);
     convoRefreshTimer.current = window.setInterval(() => {
-      // Background refresh should not change current active chat.
       refreshConversations(undefined);
     }, 60000);
 
@@ -272,35 +267,56 @@ const ChatPage: React.FC = () => {
   }, [preselectUserId]);
 
   useEffect(() => {
-    // connect websocket
     const wsUrl = getWsUrl();
+
+    // Track processed message IDs to prevent duplicate incrementing
+    const processedMsgIds = new Set<number>();
+
+    // Token provider function that fetches a fresh WebSocket token
+    const getToken = async (): Promise<string> => {
+      try {
+        const wsResponse = await getWsToken();
+        const newToken = wsResponse?.data?.accessToken;
+        if (newToken) {
+          // Store the fresh token for next use
+          localStorage.setItem("wsAccessToken", newToken);
+          return newToken;
+        }
+        throw new Error("No token in response");
+      } catch (err) {
+        console.error("Failed to fetch fresh WebSocket token:", err);
+        // Fallback: try to use cached token if available
+        const cachedToken = localStorage.getItem("wsAccessToken") || localStorage.getItem("accessToken") || "";
+        if (cachedToken) return cachedToken;
+        throw err;
+      }
+    };
+
     const socket = new ChatSocket({
       wsUrl,
-      token: token || undefined,
+      getToken,
       onConnectChange: setConnected,
       onError: (e) => {
         console.warn("chat socket error", e);
-        const msg =
-          (e as any)?.headers?.message ||
-          (e as any)?.body ||
-          (e as any)?.message ||
-          "Chat socket error";
+        const err = e as { headers?: { message?: string }; body?: string; message?: string };
+        const msg = err?.headers?.message || err?.body || err?.message || "Chat socket error";
         toast.error(String(msg));
       },
       onMessage: (msg) => {
-        upsertConversationFromMessage(msg);
-
-        const otherUserId =
-          Number(msg.senderId) === Number(meId)
-            ? Number(msg.recipientId)
-            : Number(msg.senderId);
-        const isIncoming = Number(msg.senderId) !== Number(meId);
-        if (isIncoming && otherUserId && otherUserId !== activeUserIdRef.current) {
-          incrementUnread(otherUserId, 1);
+        // Skip if we've already processed this message ID (prevents duplicate notifications)
+        const msgId = Number(msg.id);
+        if (msgId && processedMsgIds.has(msgId)) {
+          return;
+        }
+        if (msgId) {
+          processedMsgIds.add(msgId);
         }
 
+        upsertConversationFromMessage(msg);
+
+        // Only add message to the list - don't increment unread here.
+        // The ChatBell component handles unread increment for non-active conversations.
         setMessages((prev) => {
-          // dedupe by id when available
           if (msg?.id && prev.some((p) => p.id === msg.id)) return prev;
           return [...prev, msg];
         });
@@ -314,16 +330,14 @@ const ChatPage: React.FC = () => {
       socketRef.current?.deactivate();
       socketRef.current = null;
     };
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    // load history when changing active user
     if (!activeUserId) {
       setMessages([]);
       return;
     }
 
-    // Mark this conversation as read locally.
     clearUnread(activeUserId);
 
     const run = async () => {
@@ -332,8 +346,9 @@ const ChatPage: React.FC = () => {
         const list = await getChatHistory(activeUserId);
         setMessages(list || []);
         setTimeout(scrollToBottom, 0);
-      } catch (err: any) {
-        toast.error(err?.response?.data?.message || err?.message || "Failed to load chat history");
+      } catch (err: unknown) {
+        const error = err as { response?: { data?: { message?: string } }; message?: string };
+        toast.error(error?.response?.data?.message || error?.message || "Failed to load chat history");
       } finally {
         setLoadingHistory(false);
       }
@@ -346,11 +361,9 @@ const ChatPage: React.FC = () => {
     setTimeout(scrollToBottom, 0);
   }, [filteredMessages.length]);
 
-  // Animate thread when active user changes
   useEffect(() => {
     if (activeUserId) {
-      setThreadAnimating(true);
-      setTimeout(() => setThreadAnimating(false), 200);
+      setChatKey((k) => k + 1);
     }
   }, [activeUserId]);
 
@@ -371,9 +384,7 @@ const ChatPage: React.FC = () => {
       mediaUrl: type !== "TEXT" ? mediaUrl : undefined,
     };
 
-    if (payload.type === "TEXT" && !payload.content) {
-      return;
-    }
+    if (payload.type === "TEXT" && !payload.content) return;
     if (payload.type !== "TEXT" && !payload.mediaUrl) {
       toast.error("Media upload missing");
       return;
@@ -384,8 +395,10 @@ const ChatPage: React.FC = () => {
       socketRef.current.send(payload);
       setText("");
       setPendingImageUrl("");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to send");
+      setPendingVoiceUrl("");
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      toast.error(error?.message || "Failed to send");
     } finally {
       setSending(false);
     }
@@ -402,8 +415,74 @@ const ChatPage: React.FC = () => {
       const url = uploaded?.secure_url || uploaded?.url;
       if (!url) throw new Error("Upload did not return URL");
       setPendingImageUrl(url);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || err?.message || "Failed to upload image");
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(error?.response?.data?.message || error?.message || "Failed to upload image");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Voice recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        await uploadVoice(audioBlob);
+
+        // Stop all tracks to release microphone
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      // Start timer
+      recordingTimerRef.current = window.setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error("Failed to start recording:", err);
+      toast.error("Failed to access microphone");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setRecordingTime(0);
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    }
+  };
+
+  const uploadVoice = async (audioBlob: Blob) => {
+    setUploading(true);
+    try {
+      const audioFile = new File([audioBlob], "voice_message.webm", { type: "audio/webm" });
+      const uploaded = await uploadImage(audioFile);
+      const url = uploaded?.secure_url || uploaded?.url;
+      if (!url) throw new Error("Upload did not return URL");
+      setPendingVoiceUrl(url);
+      toast.success("Voice message ready");
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(error?.response?.data?.message || error?.message || "Failed to upload voice");
     } finally {
       setUploading(false);
     }
@@ -414,7 +493,10 @@ const ChatPage: React.FC = () => {
       send("IMAGE", text, pendingImageUrl);
       return;
     }
-
+    if (pendingVoiceUrl) {
+      send("VOICE", "Voice message", pendingVoiceUrl);
+      return;
+    }
     send("TEXT", text);
   };
 
@@ -423,189 +505,54 @@ const ChatPage: React.FC = () => {
     !sending &&
     !uploading &&
     activeUserId &&
-    (pendingImageUrl || (text || "").trim().length > 0)
+    (pendingImageUrl || pendingVoiceUrl || (text || "").trim().length > 0)
   );
+
+  const canRecord = Boolean(connected && !sending && !uploading && activeUserId);
 
   return (
     <AppLayout title="Chat" subtitle="Real-time messages" fullWidthChildren={true}>
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Conversations */}
-          <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-black text-slate-900">Conversations</p>
-                <p className="text-[11px] text-slate-500">
-                  {connected ? "Connected" : "Connecting..."}
-                </p>
-              </div>
-            </div>
-            <div className={`max-h-[70vh] overflow-y-auto transition-opacity duration-300 ${convoListAnimating ? "opacity-50" : "opacity-100"}`}>
-              {loadingConvos ? (
-                <div className="p-4 text-sm text-slate-500">Loading...</div>
-              ) : conversations.length === 0 ? (
-                <div className="p-4 text-sm text-slate-500">No conversations yet.</div>
-              ) : (
-                sortedConversations.map((u) => {
-                  const active = u.userId === activeUserId;
-                  const unread = getUnreadForUser(u.userId);
-                  const isOnline = (u as any).isOnline === true;
-                  const lastActiveAt = (u as any).lastActiveAt;
-                  const lastSeen = !isOnline && lastActiveAt ? formatLastSeen(lastActiveAt) : "";
-                  
-                  // Debug logging (remove in production)
-                  if (process.env.NODE_ENV === 'development') {
-                    console.log(`User ${u.userId}: isOnline=`, isOnline, ', lastActiveAt=', lastActiveAt);
-                  }
-                  
-                  return (
-                    <button
-                      key={u.userId}
-                      onClick={() => {
-                        setConvoListAnimating(true);
-                        setActiveUser(u);
-                        setTimeout(() => setConvoListAnimating(false), 300);
-                      }}
-                      className={`w-full text-left px-4 py-3 border-b border-slate-100 hover:bg-slate-50 transition-all duration-300 ${
-                        active ? "bg-emerald-50" : "bg-white"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="relative w-10 h-10 rounded-2xl bg-[#00eb5b]/15 border border-[#00eb5b]/20 overflow-hidden flex items-center justify-center shrink-0">
-                          {u.profileImage ? (
-                            <img src={u.profileImage} alt={u.fullName} className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-[#00ab42] font-black text-xs">
-                              {(u.fullName || u.email || "U").slice(0, 1).toUpperCase()}
-                            </span>
-                          )}
-                          {/* Online indicator */}
-                          {isOnline && (
-                            <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
-                          )}
-                        </div>
+          <ChatSidebar
+            conversations={sortedConversations}
+            activeUserId={activeUserId}
+            onSelect={setActiveUser}
+            getUnreadForUser={getUnreadForUser}
+            connected={connected}
+            loading={loadingConvos}
+            formatLastSeen={formatLastSeen}
+          />
 
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-black text-slate-900 truncate">
-                            {u.fullName || u.email}
-                          </p>
-                          <p className={`text-[11px] truncate ${isOnline ? "text-emerald-600 font-semibold" : lastSeen ? "text-slate-400" : "text-slate-500"}`}>
-                            {isOnline ? "Online" : lastSeen || u.email}
-                          </p>
-                        </div>
-
-                        {unread > 0 ? (
-                          <div className="shrink-0">
-                            <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-xl bg-red-500 text-white text-[10px] font-black">
-                              {unread > 9 ? "9+" : unread}
-                            </span>
-                          </div>
-                        ) : null}
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* Thread */}
-          <div className="lg:col-span-2 bg-white border border-slate-200 rounded-3xl overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-black text-slate-900 truncate">
-                  {activeUser ? activeUser.fullName || activeUser.email : "Select a conversation"}
-                </p>
-                <p className="text-[11px] text-slate-500 truncate">
-                  {activeUser ? activeUser.email : ""}
-                </p>
-              </div>
-              <div className="text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border">
-                {connected ? "LIVE" : "OFFLINE"}
-              </div>
-            </div>
-
-            <div
-              ref={threadRef}
-              className={`flex-1 p-4 overflow-y-auto max-h-[60vh] bg-slate-50 transition-opacity duration-200 ${
-                threadAnimating ? "opacity-50" : "opacity-100"
-              }`}
-            >
-              {loadingHistory ? (
-                <div className="text-sm text-slate-500">Loading messages...</div>
-              ) : orderedMessages.length === 0 ? (
-                <div className="text-sm text-slate-500">No messages yet.</div>
-              ) : (
-                <div className="space-y-2">
-                  {orderedMessages.map((m) => {
-                    const mine = isMine(meId, m);
-                    return (
-                      <div key={m.id || `${m.timestamp}-${m.senderId}-${m.recipientId}`} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[82%] rounded-2xl px-3 py-2 text-sm border ${mine ? "bg-white border-emerald-200" : "bg-white border-slate-200"}`}>
-                          {m.type === "TEXT" ? (
-                            <p className="text-slate-800 whitespace-pre-line">{m.content}</p>
-                          ) : m.type === "IMAGE" ? (
-                            <a href={m.mediaUrl} target="_blank" rel="noreferrer">
-                              <img src={m.mediaUrl} alt="chat" className="w-56 max-w-full rounded-xl border" />
-                            </a>
-                          ) : (
-                            <audio controls src={m.mediaUrl} className="w-64 max-w-full" />
-                          )}
-                          <div className="mt-1 flex items-center justify-end gap-2 text-[10px] text-slate-400">
-                            <span>{formatTime(m.timestamp)}</span>
-                            {mine ? <span>{m.isRead ? "Read" : "Sent"}</span> : null}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Composer */}
-            <div className="p-4 border-t border-slate-100 bg-white">
-              {pendingImageUrl ? (
-                <div className="mb-3 flex items-start gap-3 p-3 rounded-2xl border border-slate-200 bg-slate-50">
-                  <img src={pendingImageUrl} alt="pending" className="w-20 h-20 rounded-2xl object-cover border" />
-                  <div className="flex-1">
-                    <p className="text-xs font-black text-slate-700">Photo ready</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">Add a caption (optional) and press Send.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPendingImageUrl("")}
-                    className="px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-black"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ) : null}
-
-              <div className="flex items-end gap-2">
-                <label className={`px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-black uppercase tracking-wider cursor-pointer ${uploading ? "opacity-60 pointer-events-none" : ""}`}>
-                  Photo
-                  <input type="file" accept="image/*" className="hidden" onChange={handlePickImage} />
-                </label>
-                <textarea
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  placeholder={pendingImageUrl ? "Write a caption (optional)..." : "Type a message..."}
-                  className="flex-1 px-4 py-3 rounded-2xl border border-slate-200 min-h-12 max-h-32"
-                />
-                <button
-                  onClick={handleSendClick}
-                  disabled={!canSend}
-                  className="px-5 py-3 rounded-2xl bg-[#00eb5b] text-slate-900 font-black hover:bg-[#00ab42] hover:text-white disabled:opacity-50"
-                >
-                  {sending ? "Sending..." : "Send"}
-                </button>
-              </div>
-              {uploading ? (
-                <p className="text-[11px] text-slate-500 mt-2">Uploading photo...</p>
-              ) : null}
-            </div>
-          </div>
+          <ChatThread
+            messages={orderedMessages}
+            activeUser={activeUser}
+            meId={Number(meId)}
+            connected={connected}
+            loading={loadingHistory}
+            chatKey={chatKey}
+            threadRef={threadRef}
+            formatTime={formatTime}
+          >
+            <ChatComposer
+              text={text}
+              onTextChange={setText}
+              onSend={handleSendClick}
+              canSend={canSend}
+              canRecord={canRecord}
+              isSending={sending}
+              onPhotoPick={(file) => handlePickImage({ target: { files: [file], value: "" } } as unknown as React.ChangeEvent<HTMLInputElement>)}
+              isUploading={uploading}
+              onVoiceRecord={startRecording}
+              onVoiceStop={stopRecording}
+              isRecording={isRecording}
+              recordingTime={recordingTime}
+              pendingImageUrl={pendingImageUrl}
+              pendingVoiceUrl={pendingVoiceUrl}
+              onRemoveImage={() => setPendingImageUrl("")}
+              onRemoveVoice={() => setPendingVoiceUrl("")}
+            />
+          </ChatThread>
         </div>
       </div>
     </AppLayout>

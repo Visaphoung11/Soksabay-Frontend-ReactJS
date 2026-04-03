@@ -16,6 +16,10 @@ export interface User {
   role: string[]; // e.g. ["USER"] or ["USER", "DRIVER"]
   accessToken: string;
   refreshToken: string;
+  /** Chat related fields */
+  lastMessageTime?: string;
+  lastActiveAt?: string;
+  isOnline?: boolean;
 }
 
 export interface AuthContextType {

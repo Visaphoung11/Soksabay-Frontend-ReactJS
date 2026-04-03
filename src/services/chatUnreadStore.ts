@@ -1,6 +1,34 @@
 type UnreadMap = Record<string, number>;
 
 const KEY = "chat_unread_map";
+const PROCESSED_KEY = "chat_processed_messages";
+
+const getProcessedIds = (): Set<string> => {
+  const raw = localStorage.getItem(PROCESSED_KEY);
+  if (!raw) return new Set();
+  try {
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+};
+
+const saveProcessedIds = (ids: Set<string>) => {
+  const arr = Array.from(ids).slice(-100); // Keep only last 100 to avoid bloat
+  localStorage.setItem(PROCESSED_KEY, JSON.stringify(arr));
+};
+
+export const isMessageProcessed = (msgId: string | number): boolean => {
+  const ids = getProcessedIds();
+  return ids.has(String(msgId));
+};
+
+export const markMessageProcessed = (msgId: string | number) => {
+  const ids = getProcessedIds();
+  ids.add(String(msgId));
+  saveProcessedIds(ids);
+};
 
 const safeParse = (raw: string | null): UnreadMap => {
   if (!raw) return {};
